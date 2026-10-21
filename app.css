@@ -48,6 +48,9 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .nav .count{margin-left:auto;background:var(--lime);color:var(--navy);font-size:11px;font-weight:700;border-radius:99px;padding:1px 7px}
 .side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 8px 0;border-top:1px solid var(--line)}
 .avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+.sf-out{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);flex:none}
+.sf-out:hover{background:var(--card-2);color:var(--bad)}
+.sf-out svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8}
 .side-foot small{display:block;color:var(--ink-2);font-size:11.5px}
 .main{display:flex;flex-direction:column;gap:16px;min-width:0;padding-bottom:30px}
 .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}

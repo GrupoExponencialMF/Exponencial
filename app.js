@@ -129,7 +129,7 @@ function shell(title, actions = '') {
         <div class="ngroup">Sistema</div>
         <button data-go="set" class="${S.view === 'set' ? 'on' : ''}">${svg('set')}Ajustes</button>
       </nav>
-      <div class="side-foot"><span class="avatar">FA</span><div style="min-width:0"><b style="font-size:13px">Fernanda</b><small>${esc(S.user?.email || '')}</small></div></div>
+      <div class="side-foot"><span class="avatar">FA</span><div style="min-width:0;flex:1"><b style="font-size:13px">Fernanda</b><small>${esc(S.user?.email || '')}</small></div><button class="sf-out" id="sideOut" title="Cerrar sesión" aria-label="Cerrar sesión">${svg('out')}</button></div>
     </aside>
     <main class="main">
       <div class="top"><h1>${title}</h1><span class="date">${cap(DIA[d.getDay()])} ${d.getDate()} de ${MES[d.getMonth()]}, ${d.getFullYear()}</span><div class="actions">${actions}</div></div>
@@ -146,6 +146,7 @@ function shell(title, actions = '') {
 }
 function bindShell() {
   $$('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+  const so = $('#sideOut'); if (so) so.onclick = cerrarSesion;
   const m = $('#mcap'); if (m) m.onclick = () => chooseNew();
 }
 function go(v) { S.view = v; render(); window.scrollTo({ top: 0 }); }
@@ -387,9 +388,9 @@ function renderSet() {
     const { data, error } = await sb.functions.invoke('notificaciones', { body: { prueba: true } });
     $('#pushTest').disabled = false;
     if (error || !data?.ok) { console.error(error || data); toast('No se pudo enviar la prueba. Revisa la función en Supabase.'); return; }
-    toast((data.informe || []).join(' · ') || 'Prueba enviada');
+    const txt = (data.informe || []).join(' · ') || 'Prueba enviada'; toast(txt); $('#pushSt').textContent = 'Resultado de la prueba: ' + txt;
   };
-  $('#logout').onclick = async () => { await sb.auth.signOut(); };
+  $('#logout').onclick = cerrarSesion;
   $('#reload').onclick = async () => { await loadAll(); renderSet(); toast('Datos actualizados'); };
   $('#aviso').onchange = async e => { const v = +e.target.value; if (await handle(await sb.from('ajustes').update({ aviso_previo_min: v }).eq('user_id', S.user.id), 'Aviso previo actualizado')) S.ajustes.aviso_previo_min = v; };
   $$('[data-col]').forEach(i => { i.oninput = () => { S.ajustes[i.dataset.col] = i.value; applyColors(); }; i.onchange = async () => { await handle(await sb.from('ajustes').update({ [i.dataset.col]: i.value }).eq('user_id', S.user.id), 'Color guardado'); }; });
@@ -410,6 +411,14 @@ function renderSet() {
     const data = await handle(res, 'Tipo agregado');
     if (data) { if (prev) Object.assign(prev, data); else S.catalogos.push(data); renderSet(); }
   };
+}
+
+/* ---------- Cerrar sesión ---------- */
+async function cerrarSesion() {
+  if (!confirm('¿Cerrar sesión en este dispositivo?')) return;
+  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { console.error(e); }
+  try { Object.keys(localStorage).filter(k => k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); } catch (_) {}
+  S.user = null; S.pendientes = []; S.recordatorios = []; booted = false; closeSheet(); renderLogin('Sesión cerrada.');
 }
 
 /* ---------- Avisos push ---------- */
@@ -449,7 +458,7 @@ async function start(session) {
   $('#app').innerHTML = '<div class="boot">Cargando tu información…</div>';
   await loadAll(); S.view = 'home'; render();
 }
-sb.auth.onAuthStateChange((_e, session) => { start(session); });
+sb.auth.onAuthStateChange((_e, session) => { setTimeout(() => start(session), 0); });
 sb.auth.getSession().then(({ data }) => start(data.session));
 document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible' && S.user) { await loadAll(); if (!$('#sheet').classList.contains('on')) render(); } });
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
