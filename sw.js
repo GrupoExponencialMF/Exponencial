@@ -1,6 +1,6 @@
 // Service worker: guarda la estructura de la app para que abra rápido e instalable.
-const CACHE = 'exponencial-v1.1.2';
-const SHELL = ['./', './index.html', './app.css', './app.js', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'exponencial-v1.2.0';
+const SHELL = ['./', './index.html', './app.css', './app.js', './b2b.js', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

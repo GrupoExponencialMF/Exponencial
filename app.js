@@ -53,6 +53,7 @@ const apill = f => `<span class="apill" style="--c:${FRENTES[f][1]}"><i></i>${es
 
 /* ---------- Estado ---------- */
 const S = { user: null, ajustes: null, prefs: [], catalogos: [], pendientes: [], recordatorios: [], view: 'home',
+  empresas: [], cuentas: [], propuestas: [], seguimientos: [], forecasts: [], fgrupos: [], fegresos: [], fotoUrls: {},
   qTipo: 'Pendiente', qFrente: 'B2B', pFrente: 'Todas', pPeriodo: 'Todos', pVista: 'Tarjetas', rFrente: 'Todas' };
 
 const isLate = p => p.estatus !== 'Terminado' && (p.fecha_limite < today() || (p.fecha_limite === today() && hm(p.hora_limite) < nowHM()));
@@ -73,17 +74,27 @@ async function handle(res, okMsg) {
   return res.data ?? true;
 }
 async function loadAll() {
-  const [a, p, c, pe, re] = await Promise.all([
+  const [a, p, c, pe, re, em, cu, pr, sg, fo, fg, fe] = await Promise.all([
     sb.from('ajustes').select('*').maybeSingle(),
     sb.from('preferencias_notificacion').select('*'),
     sb.from('catalogos').select('*'),
     sb.from('pendientes').select('*'),
-    sb.from('recordatorios').select('*')
+    sb.from('recordatorios').select('*'),
+    sb.from('empresas').select('*'),
+    sb.from('cuentas').select('*'),
+    sb.from('propuestas').select('*'),
+    sb.from('seguimientos').select('*'),
+    sb.from('forecasts').select('*'),
+    sb.from('forecast_grupos').select('*'),
+    sb.from('forecast_egresos').select('*')
   ]);
   const err = [a, p, c, pe, re].find(r => r.error);
   if (err) { console.error(err.error); toast('Error al cargar tu información. Revisa tu conexión.'); }
   S.ajustes = a.data || {}; S.prefs = p.data || []; S.catalogos = c.data || [];
   S.pendientes = pe.data || []; S.recordatorios = re.data || [];
+  S.empresas = em.data || []; S.cuentas = cu.data || []; S.propuestas = pr.data || []; S.seguimientos = sg.data || [];
+  S.forecasts = fo.data || []; S.fgrupos = fg.data || []; S.fegresos = fe.data || [];
+  if ([em, cu, pr].some(r => r.error)) console.warn('Tablas comerciales no disponibles todavía (ejecuta el script de la etapa 3).');
   applyColors();
 }
 function applyColors() {
@@ -113,6 +124,16 @@ function renderLogin(msg = '') {
 
 /* ---------- Estructura ---------- */
 const NAV = [['home', 'Inicio', 'home'], ['pend', 'Pendientes', 'task'], ['rem', 'Recordatorios', 'rem'], ['set', 'Ajustes', 'set']];
+const B2B_VIEWS = ['cuen', 'prop', 'fore'];
+const SUBTABS = {
+  b2b: [['cuen', 'Cuentas'], ['prop', 'Propuestas'], ['fore', 'Forecast'], [null, 'Ventas · etapa 4']],
+  org: [['pend', 'Pendientes'], ['rem', 'Recordatorios']]
+};
+function subtabsFor(v) {
+  const g = B2B_VIEWS.includes(v) ? 'b2b' : ['pend', 'rem'].includes(v) ? 'org' : null;
+  if (!g) return '';
+  return `<div class="subtabs" role="tablist">${SUBTABS[g].map(([k, l]) => k ? `<button data-go="${k}" class="${v === k ? 'on' : ''}">${l}</button>` : `<button disabled>${l}</button>`).join('')}</div>`;
+}
 function shell(title, actions = '') {
   const late = S.pendientes.filter(isLate).length;
   const d = new Date();
@@ -123,7 +144,7 @@ function shell(title, actions = '') {
         <div class="ngroup">Mi día</div>
         ${NAV.slice(0, 3).map(([k, l, i]) => `<button data-go="${k}" class="${S.view === k ? 'on' : ''}">${svg(i)}${l}${k === 'pend' && late ? `<span class="count">${late}</span>` : ''}</button>`).join('')}
         <div class="ngroup">Mis frentes</div>
-        <button disabled>${svg('sale')}B2B<span class="soon">Etapa 3</span></button>
+        <button data-go="cuen" class="${B2B_VIEWS.includes(S.view) ? 'on' : ''}">${svg('sale')}B2B</button>
         <button disabled>${svg('bulb')}Innovación & Disrupción<span class="soon">Etapa 5</span></button>
         <button disabled>${svg('star')}Chief of Staff<span class="soon">Etapa 6</span></button>
         <div class="ngroup">Sistema</div>
@@ -133,14 +154,15 @@ function shell(title, actions = '') {
     </aside>
     <main class="main">
       <div class="top"><h1>${title}</h1><span class="date">${cap(DIA[d.getDay()])} ${d.getDate()} de ${MES[d.getMonth()]}, ${d.getFullYear()}</span><div class="actions">${actions}</div></div>
+      ${subtabsFor(S.view)}
       <div id="view"></div>
     </main>
   </div>
   <nav class="mtabs" aria-label="Secciones">
     <button data-go="home" class="${S.view === 'home' ? 'on' : ''}">${svg('home')}Inicio</button>
-    <button data-go="pend" class="${S.view === 'pend' ? 'on' : ''}">${svg('task')}Pendientes</button>
+    <button data-go="cuen" class="${B2B_VIEWS.includes(S.view) ? 'on' : ''}">${svg('sale')}B2B</button>
     <button class="cap" id="mcap" aria-label="Captura rápida">${svg('plus')}</button>
-    <button data-go="rem" class="${S.view === 'rem' ? 'on' : ''}">${svg('rem')}Recordatorios</button>
+    <button data-go="pend" class="${['pend', 'rem'].includes(S.view) ? 'on' : ''}">${svg('task')}Pendientes</button>
     <button data-go="set" class="${S.view === 'set' ? 'on' : ''}">${svg('set')}Ajustes</button>
   </nav>`;
 }
@@ -150,8 +172,10 @@ function bindShell() {
   const m = $('#mcap'); if (m) m.onclick = () => chooseNew();
 }
 function go(v) { S.view = v; render(); window.scrollTo({ top: 0 }); }
+const VIEWS = {};
 function render() {
-  ({ home: renderHome, pend: renderPend, rem: renderRem, set: renderSet })[S.view]();
+  document.body.dataset.area = B2B_VIEWS.includes(S.view) ? 'b2b' : 'home';
+  (VIEWS[S.view] || VIEWS.home)();
 }
 
 /* ---------- Inicio ---------- */
@@ -218,7 +242,7 @@ function bindRows() {
 }
 
 /* ---------- Hoja (modal) ---------- */
-function openSheet(html) { $('#sheet').innerHTML = html; $('#sheet').classList.add('on'); $('#scrim').classList.add('on'); $('#sheet').scrollTop = 0; $$('#sheet [data-close]').forEach(b => b.onclick = closeSheet); }
+function openSheet(html, wide) { $('#sheet').innerHTML = html; $('#sheet').classList.toggle('wide', !!wide); $('#sheet').classList.add('on'); $('#scrim').classList.add('on'); $('#sheet').scrollTop = 0; $$('#sheet [data-close]').forEach(b => b.onclick = closeSheet); }
 function closeSheet() { $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); }
 $('#scrim').onclick = closeSheet;
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
@@ -233,8 +257,8 @@ const frenteOpts = (id, cur) => `<div class="chips" id="${id}">${Object.keys(FRE
 const bindChoice = id => $$(`#${id} button`).forEach(b => b.onclick = () => $$(`#${id} button`).forEach(x => x.classList.toggle('on', x === b)));
 const picked = id => $(`#${id} .on`)?.dataset.x;
 
-function pendForm(p) {
-  const e = p || {};
+function pendForm(p, preset) {
+  const e = p || { ...(preset || {}) };
   let dg = !!e.es_encargo_dg, imp = !!e.importante;
   const draw = () => {
     const keep = $('#pt') ? { t: $('#pt').value, n: $('#pn').value } : null;
@@ -242,7 +266,8 @@ function pendForm(p) {
       <div class="fgrid">
         <label class="f full"><span>Título</span><input class="in" id="pt" value="${esc(e.titulo || '')}"></label>
         <div class="f full"><span>Frente</span>${frenteOpts('pf', e.frente || (S.view === 'home' ? S.qFrente : 'B2B'))}</div>
-        <label class="f"><span>Asociado a</span><select class="in" id="pa">${['Fernanda', 'Joaquín'].map(x => `<option ${e.asociado_tipo === x ? 'selected' : ''}>${x}</option>`).join('')}<option disabled>Cuentas (disponible en la etapa 3)</option></select></label>
+        <label class="f"><span>Asociado a</span><select class="in" id="pa">${['Fernanda', 'Joaquín', 'Cuenta'].map(x => `<option ${e.asociado_tipo === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+        <label class="f full ${e.asociado_tipo === 'Cuenta' ? '' : 'hidden'}" id="pcw"><span>Cuenta</span><select class="in" id="pcu"><option value="">Selecciona…</option>${S.cuentas.filter(c => !c.descartada || c.id === e.cuenta_id).map(c => `<option value="${c.id}" ${e.cuenta_id === c.id ? 'selected' : ''}>${esc(c.nombre + ' ' + (c.apellido || ''))} · ${esc(empNombre(c.empresa_id))}</option>`).join('')}</select></label>
         <label class="f"><span>Responsable</span><select class="in" id="pr">${['Fernanda', 'Joaquín'].map(x => `<option ${e.responsable === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
         <label class="f full"><span>Tipo</span><select class="in" id="pty"><option value="">Sin tipo</option>${tipos().map(x => `<option ${e.tipo === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
         <label class="f"><span>Fecha límite</span><input class="in" type="date" id="pd" value="${e.fecha_limite || today()}"></label>
@@ -256,6 +281,7 @@ function pendForm(p) {
       <div class="foot">${p ? '<button class="btn btn-danger left" id="pdel">Eliminar</button>' : ''}<button class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-dark" id="pok">Guardar</button></div>`);
     if (keep) { $('#pt').value = keep.t; $('#pn').value = keep.n; }
     bindChoice('pf'); bindChoice('pst');
+    $('#pa').onchange = () => $('#pcw').classList.toggle('hidden', $('#pa').value !== 'Cuenta');
     $('#pimp').onclick = () => { imp = !imp; $('#pimp').classList.toggle('on', imp); };
     $('#pdg').onclick = () => { dg = !dg; if (dg) { e.frente = 'CoS'; } e.titulo = $('#pt').value; e.notas = $('#pn').value; draw(); };
     if (p) $('#pdel').onclick = async () => {
@@ -263,10 +289,11 @@ function pendForm(p) {
       if (await handle(await sb.from('pendientes').delete().eq('id', p.id), 'Pendiente eliminado')) { S.pendientes = S.pendientes.filter(x => x.id !== p.id); closeSheet(); render(); }
     };
     $('#pok').onclick = async () => {
-      const row = { titulo: $('#pt').value.trim(), frente: picked('pf'), asociado_tipo: $('#pa').value, responsable: $('#pr').value, tipo: $('#pty').value || null,
+      const row = { titulo: $('#pt').value.trim(), frente: picked('pf'), asociado_tipo: $('#pa').value, cuenta_id: $('#pa').value === 'Cuenta' ? ($('#pcu').value || null) : null, responsable: $('#pr').value, tipo: $('#pty').value || null,
         fecha_limite: $('#pd').value, hora_limite: $('#ph').value, importante: imp, es_encargo_dg: dg, estatus: picked('pst'), notas: $('#pn').value.trim() || null,
         fecha_solicitud: dg ? $('#psol').value || null : null, entregable: dg ? ($('#pent').value.trim() || null) : null };
       if (!row.titulo) { toast('Escribe el título.'); return; }
+      if (row.asociado_tipo === 'Cuenta' && !row.cuenta_id) { toast('Selecciona la cuenta.'); return; }
       if (!row.fecha_limite || !row.hora_limite) { toast('Captura fecha y hora: son necesarias para avisarte.'); return; }
       $('#pok').disabled = true;
       const res = p ? await sb.from('pendientes').update(row).eq('id', p.id).select().single() : await sb.from('pendientes').insert(row).select().single();
@@ -353,11 +380,19 @@ function renderRem() {
 }
 
 /* ---------- Ajustes ---------- */
+const CATALOGOS = [['tipo_pendiente', 'Tipos de pendiente', false], ['fase_prospeccion', 'Fases de prospección', true], ['fase_comercial', 'Fases comerciales', true],
+  ['motivo_descarte', 'Motivos de descarte', false], ['tipo_programa', 'Tipos de programa', false], ['modalidad', 'Modalidades', false],
+  ['adicional', 'Adicionales', false], ['medio_seguimiento', 'Medios de seguimiento', false]];
+function catEditor(cat, label, conColor) {
+  const items = S.catalogos.filter(c => c.catalogo === cat && c.activo).sort((x, y) => x.orden - y.orden);
+  return `<details class="catbox"><summary>${label}<span class="sub">${items.length}</span></summary>
+    <div class="catchips">${items.map(c => `<span class="catchip">${conColor ? `<input type="color" class="cdot" data-ccol="${c.id}" value="${esc(c.color || '#8A8A86')}" aria-label="Color de ${esc(c.valor)}">` : ''}${esc(c.valor)}<button data-cdel="${c.id}" aria-label="Quitar ${esc(c.valor)}">×</button></span>`).join('')}</div>
+    <input class="in" data-cadd="${cat}" placeholder="Agregar" style="margin-top:10px"></details>`;
+}
 function renderSet() {
   $('#app').innerHTML = shell('Ajustes', `<button class="btn btn-ghost" id="logout">${svg('out')}Cerrar sesión</button>`);
   const a = S.ajustes || {};
   const prefs = Object.keys(NOTIF).map(k => S.prefs.find(p => p.tipo === k) || { tipo: k, correo: true, app: true });
-  const tp = S.catalogos.filter(c => c.catalogo === 'tipo_pendiente' && c.activo).sort((x, y) => x.orden - y.orden);
   $('#view').innerHTML = `<div class="set-grid">
     <div style="display:flex;flex-direction:column;gap:16px">
       <section class="card"><h3>Notificaciones</h3><p class="sub">Elige el canal de cada aviso. Los envíos se activan en la etapa 2; tus preferencias ya quedan guardadas.</p>
@@ -374,9 +409,11 @@ function renderSet() {
       <section class="card"><h3>Colores de la plataforma</h3><p class="sub">Azul marino Exponencial como base y un color por frente.</p>
         ${[['color_base', 'Base · Exponencial'], ['color_b2b', 'B2B'], ['color_id', 'Innovación & Disrupción'], ['color_cos', 'Chief of Staff']].map(([k, l]) => `<label class="colorrow"><input type="color" data-col="${k}" value="${esc(a[k] || '#14394D')}"><span style="flex:1;font-weight:600">${l}</span></label>`).join('')}
       </section>
-      <section class="card"><h3>Tipos de pendiente</h3><p class="sub">Escribe y presiona Enter para agregar.</p>
-        <div class="catchips">${tp.map(c => `<span class="catchip">${esc(c.valor)}<button data-cdel="${c.id}" aria-label="Quitar ${esc(c.valor)}">×</button></span>`).join('')}</div>
-        <input class="in" id="cadd" placeholder="Agregar tipo" style="margin-top:10px">
+      <section class="card"><h3>Catálogos</h3><p class="sub">Escribe y presiona Enter para agregar. Los colores se cambian tocando el círculo.</p>
+        ${CATALOGOS.map(([k, l, col]) => catEditor(k, l, col)).join('')}
+      </section>
+      <section class="card"><h3>Empresas</h3><p class="sub">Color de cada empresa en cuentas y propuestas.</p>
+        ${S.empresas.length ? S.empresas.slice().sort((x, y) => x.nombre.localeCompare(y.nombre)).map(em => `<label class="colorrow"><input type="color" data-emc="${em.id}" value="${esc(em.color)}"><span style="flex:1;font-weight:600">${esc(em.nombre)}</span></label>`).join('') : '<div class="empty">Las empresas se crean al dar de alta una cuenta.</div>'}
       </section>
       <section class="card"><h3>Acerca de</h3><p class="sub">Exponencial · Centro de mando · versión ${esc(CFG.version)}<br>Sesión: ${esc(S.user?.email || '')}</p>
         <button class="btn btn-ghost" id="reload">Actualizar datos</button></section>
@@ -402,16 +439,25 @@ function renderSet() {
     const data = await handle(res, `${NOTIF[tipo][0]}: ${ch} ${val ? 'activado' : 'desactivado'}`);
     if (data) { if (p) Object.assign(p, data); else S.prefs.push(data); b.classList.toggle('on', val); }
   });
-  $$('[data-cdel]').forEach(b => b.onclick = async () => { if (await handle(await sb.from('catalogos').update({ activo: false }).eq('id', b.dataset.cdel), 'Tipo quitado')) { S.catalogos.find(c => c.id === b.dataset.cdel).activo = false; renderSet(); } });
-  $('#cadd').onkeydown = async e => {
-    if (e.key !== 'Enter' || !e.target.value.trim()) return;
-    const valor = e.target.value.trim(), prev = S.catalogos.find(c => c.catalogo === 'tipo_pendiente' && c.valor.toLowerCase() === valor.toLowerCase());
+  $$('[data-cdel]').forEach(b => b.onclick = async () => { if (await handle(await sb.from('catalogos').update({ activo: false }).eq('id', b.dataset.cdel), 'Elemento quitado')) { S.catalogos.find(c => c.id === b.dataset.cdel).activo = false; renderSet(); } });
+  $$('[data-ccol]').forEach(i => i.onchange = async () => { const c = S.catalogos.find(x => x.id === i.dataset.ccol); if (await handle(await sb.from('catalogos').update({ color: i.value }).eq('id', c.id), 'Color guardado')) c.color = i.value; });
+  $$('[data-emc]').forEach(i => i.onchange = async () => { const em = S.empresas.find(x => x.id === i.dataset.emc); if (await handle(await sb.from('empresas').update({ color: i.value }).eq('id', em.id), 'Color guardado')) em.color = i.value; });
+  $$('[data-cadd]').forEach(inp => inp.onkeydown = async e => {
+    if (e.key !== 'Enter' || !inp.value.trim()) return;
+    const cat = inp.dataset.cadd, valor = inp.value.trim(), prev = S.catalogos.find(c => c.catalogo === cat && c.valor.toLowerCase() === valor.toLowerCase());
+    const n = S.catalogos.filter(c => c.catalogo === cat).length;
     const res = prev ? await sb.from('catalogos').update({ activo: true }).eq('id', prev.id).select().single()
-      : await sb.from('catalogos').insert({ catalogo: 'tipo_pendiente', valor, orden: tp.length + 1 }).select().single();
-    const data = await handle(res, 'Tipo agregado');
+      : await sb.from('catalogos').insert({ catalogo: cat, valor, orden: n + 1, color: CATALOGOS.find(x => x[0] === cat)[2] ? '#3C74D6' : null }).select().single();
+    const data = await handle(res, 'Agregado');
     if (data) { if (prev) Object.assign(prev, data); else S.catalogos.push(data); renderSet(); }
-  };
+  });
 }
+
+/* ---------- Registro de vistas y utilidades compartidas ---------- */
+Object.assign(VIEWS, { home: renderHome, pend: renderPend, rem: renderRem, set: renderSet });
+function empNombre(id) { return (S.empresas.find(e => e.id === id) || {}).nombre || 'Sin empresa'; }
+window.EXP = { sb, S, $, $$, esc, svg, ICON, toast, handle, shell, bindShell, bindRows, openSheet, closeSheet, head, go, render, VIEWS,
+  today, addDays, fdShort, fdLong, hm, cap, MES, MES3, apill, FRENTES, bindChoice, picked, pendForm, remForm, empNombre, loadAll };
 
 /* ---------- Cerrar sesión ---------- */
 async function cerrarSesion() {
