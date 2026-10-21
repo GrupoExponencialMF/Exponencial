@@ -367,6 +367,9 @@ function renderSet() {
       </section>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
+      <section class="card"><h3>Avisos en este dispositivo</h3><p class="sub" id="pushSt">Revisando…</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-dark" id="pushOn">Activar avisos</button><button class="btn btn-ghost" id="pushTest">Enviar prueba</button></div>
+      </section>
       <section class="card"><h3>Colores de la plataforma</h3><p class="sub">Azul marino Exponencial como base y un color por frente.</p>
         ${[['color_base', 'Base · Exponencial'], ['color_b2b', 'B2B'], ['color_id', 'Innovación & Disrupción'], ['color_cos', 'Chief of Staff']].map(([k, l]) => `<label class="colorrow"><input type="color" data-col="${k}" value="${esc(a[k] || '#14394D')}"><span style="flex:1;font-weight:600">${l}</span></label>`).join('')}
       </section>
@@ -377,7 +380,15 @@ function renderSet() {
       <section class="card"><h3>Acerca de</h3><p class="sub">Exponencial · Centro de mando · versión ${esc(CFG.version)}<br>Sesión: ${esc(S.user?.email || '')}</p>
         <button class="btn btn-ghost" id="reload">Actualizar datos</button></section>
     </div></div>`;
-  bindShell();
+  bindShell(); pushStatus();
+  $('#pushOn').onclick = activarAvisos;
+  $('#pushTest').onclick = async () => {
+    $('#pushTest').disabled = true; toast('Enviando prueba…');
+    const { data, error } = await sb.functions.invoke('notificaciones', { body: { prueba: true } });
+    $('#pushTest').disabled = false;
+    if (error || !data?.ok) { console.error(error || data); toast('No se pudo enviar la prueba. Revisa la función en Supabase.'); return; }
+    toast((data.informe || []).join(' · ') || 'Prueba enviada');
+  };
   $('#logout').onclick = async () => { await sb.auth.signOut(); };
   $('#reload').onclick = async () => { await loadAll(); renderSet(); toast('Datos actualizados'); };
   $('#aviso').onchange = async e => { const v = +e.target.value; if (await handle(await sb.from('ajustes').update({ aviso_previo_min: v }).eq('user_id', S.user.id), 'Aviso previo actualizado')) S.ajustes.aviso_previo_min = v; };
@@ -399,6 +410,34 @@ function renderSet() {
     const data = await handle(res, 'Tipo agregado');
     if (data) { if (prev) Object.assign(prev, data); else S.catalogos.push(data); renderSet(); }
   };
+}
+
+/* ---------- Avisos push ---------- */
+const pushSoportado = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const instalada = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function b64ToBytes(b64) { const p = '='.repeat((4 - b64.length % 4) % 4); const s = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...s].map(c => c.charCodeAt(0))); }
+async function pushStatus() {
+  const el = $('#pushSt'); if (!el) return;
+  if (!pushSoportado()) { el.textContent = esIOS() && !instalada() ? 'En iPhone, primero instala la app: Safari › Compartir › Agregar a pantalla de inicio, y abre Exponencial desde ese ícono.' : 'Este navegador no permite avisos. Usa Chrome, Edge o Safari actualizado.'; $('#pushOn').disabled = true; return; }
+  if (Notification.permission === 'denied') { el.textContent = 'Los avisos están bloqueados para este sitio. Actívalos en la configuración del navegador o del celular.'; return; }
+  const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
+  el.textContent = sub ? 'Activos en este dispositivo. Recibirás recordatorios, pendientes y el resumen del día.' : 'Inactivos en este dispositivo. Actívalos para recibir avisos aquí.';
+  $('#pushOn').textContent = sub ? 'Volver a registrar' : 'Activar avisos';
+}
+async function activarAvisos() {
+  if (!pushSoportado()) return pushStatus();
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Necesitas permitir las notificaciones.'); return pushStatus(); }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(CFG.vapidPublicKey) });
+    const j = sub.toJSON();
+    const disp = esIOS() ? 'iPhone' : /android/i.test(navigator.userAgent) ? 'Android' : 'Computadora';
+    const res = await sb.from('suscripciones_push').upsert({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, dispositivo: disp }, { onConflict: 'endpoint' });
+    if (await handle(res, 'Avisos activados en este dispositivo')) pushStatus();
+  } catch (e) { console.error(e); toast('No se pudieron activar los avisos en este dispositivo.'); }
 }
 
 /* ---------- Arranque ---------- */
