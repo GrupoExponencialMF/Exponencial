@@ -416,9 +416,12 @@ function renderSet() {
 /* ---------- Cerrar sesión ---------- */
 async function cerrarSesion() {
   if (!confirm('¿Cerrar sesión en este dispositivo?')) return;
-  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { console.error(e); }
+  toast('Cerrando sesión…');
+  // No se espera más de 1.5 s a Supabase: algunos navegadores de escritorio se quedan bloqueados aquí.
+  try { await Promise.race([sb.auth.signOut({ scope: 'local' }), new Promise(r => setTimeout(r, 1500))]); } catch (e) { console.error(e); }
   try { Object.keys(localStorage).filter(k => k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); } catch (_) {}
-  S.user = null; S.pendientes = []; S.recordatorios = []; booted = false; closeSheet(); renderLogin('Sesión cerrada.');
+  try { Object.keys(sessionStorage).filter(k => k.startsWith('sb-')).forEach(k => sessionStorage.removeItem(k)); } catch (_) {}
+  location.replace(location.pathname + '?salida=' + Date.now());
 }
 
 /* ---------- Avisos push ---------- */
