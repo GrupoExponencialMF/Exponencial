@@ -195,8 +195,9 @@ function seguimientoForm(c, propId) {
     if (fp) cuentaUpd.fase = fp;
     if (fc === 'Venta' && c.tipo !== 'Cliente') cuentaUpd.tipo = 'Cliente';
     if (Object.keys(cuentaUpd).length) { const d = await handle(await sb.from('cuentas').update(cuentaUpd).eq('id', c.id).select().single()); if (d) Object.assign(c, d); }
-    toast(fc === 'Venta' ? 'Seguimiento guardado. La cuenta ahora es Cliente.' : 'Seguimiento guardado');
-    cuentaDetalle(c.id); render();
+    render();
+    if (fc === 'Venta' && !(S.ventas || []).some(v => v.propuesta_id === pid)) { toast('La cuenta ahora es Cliente. Registra la venta y su calendario de pagos.'); X.ventas.ventaForm(pid); return; }
+    toast('Seguimiento guardado'); cuentaDetalle(c.id);
   };
 }
 
@@ -308,8 +309,11 @@ async function propuestaDetalle(id) {
     ${p.contenido ? `<div class="hl">Contenido</div><p class="pre">${esc(p.contenido)}</p>` : ''}
     ${p.comentarios ? `<div class="hl">Comentarios</div><p class="pre">${esc(p.comentarios)}</p>` : ''}
     <div class="hl">Seguimientos de esta propuesta</div>${segs.length ? `<div class="tl">${segs.map(s => `<div class="tl-i"><div class="tl-d">${fdShort(s.fecha)}</div><div><div class="t">${esc(s.medio || '')} ${s.fase_comercial ? pillF('fase_comercial', s.fase_comercial) : ''}</div><div class="s">${esc(s.nota)}</div></div></div>`).join('')}</div>` : '<div class="empty">Sin seguimientos.</div>'}
-    <div class="foot"><button class="btn btn-ghost left" id="ddel2" style="display:none"></button><button class="btn btn-ghost" id="dEdit2">Editar</button><button class="btn btn-ghost" id="dSeg2">Registrar seguimiento</button><button class="btn btn-dark" id="dFc">${f ? (f.terminado ? 'Ver forecast' : 'Continuar forecast') : 'Llenar forecast'}</button></div>`);
+    ${(() => { const v = (S.ventas || []).find(x => x.propuesta_id === p.id); return v ? `<div class="hl">Venta</div><div class="rows"><div class="row"><button class="row-main" id="dVer"><div class="t">Venta registrada el ${fdShort(v.fecha_venta)}</div><div class="s">${money(v.total_con_iva, 2)} con IVA · ver calendario de pagos</div></button></div></div>` : ''; })()}
+    <div class="foot">${p.fase_comercial === 'Venta' && f && f.terminado && !(S.ventas || []).some(x => x.propuesta_id === p.id) ? '<button class="btn btn-lime left" id="dVenta">Registrar venta</button>' : ''}<button class="btn btn-ghost" id="dEdit2">Editar</button><button class="btn btn-ghost" id="dSeg2">Registrar seguimiento</button><button class="btn btn-dark" id="dFc">${f ? (f.terminado ? 'Ver forecast' : 'Continuar forecast') : 'Llenar forecast'}</button></div>`);
   $('#dEdit2').onclick = () => propuestaForm(p);
+  if ($('#dVenta')) $('#dVenta').onclick = () => X.ventas.ventaForm(p.id);
+  if ($('#dVer')) $('#dVer').onclick = () => X.ventas.ventaDetalle(S.ventas.find(x => x.propuesta_id === p.id).id);
   $('#dSeg2').onclick = () => seguimientoForm(c, p.id);
   $('#dFc').onclick = () => forecastEditor(p.id);
 }
@@ -485,5 +489,5 @@ async function enviar(p, st) {
 
 /* ---------- Registro ---------- */
 Object.assign(VIEWS, { cuen: renderCuentas, prop: renderPropuestas, fore: renderForecast });
-X.b2b = { cuentaDetalle, propuestaDetalle, forecastEditor, calc, resumenFc };
+X.b2b = { cuentaDetalle, propuestaDetalle, forecastEditor, calc, resumenFc, money, pillO, ORIG, urlsFotos, comprimir, nombre, cuenta, fcDe, CAT, num, origenProp, empDot };
 })();

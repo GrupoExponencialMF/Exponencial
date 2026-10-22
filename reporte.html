@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Reporte de cobranza B2B · Grupo Exponencial</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDF0F3;--card:#fff;--card-2:#F2F5F7;--ink:#0F1F2B;--ink-2:#6A7782;--line:#E3E8EC;--navy:#14394D;--bad:#D6453D;--good:#2E9E62;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B151D;--card:#12202B;--card-2:#1A2B37;--ink:#E9F0F5;--ink-2:#8FA1AE;--line:#223442;color-scheme:dark}}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Century Gothic','Outfit',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+.top{background:var(--navy);color:#fff;padding:22px 24px}
+.top-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top b{font-size:17px;font-weight:600;display:block}.top small{color:#A9BDCB;font-size:12.5px}
+.ro{margin-left:auto;background:rgba(255,255,255,.12);border-radius:99px;padding:7px 14px;font-size:12px;font-weight:600}
+.strip{height:5px;background:linear-gradient(90deg,#E5383B 0 50%,#B5E61D 50%)}
+main{max-width:1240px;margin:0 auto;padding:24px 18px 50px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:28px;font-weight:500;letter-spacing:-.03em}
+.sub{color:var(--ink-2);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px 18px}
+.k small{display:block;color:var(--ink-2);font-size:12px;font-weight:600}.k b{display:block;font-size:22px;font-weight:500;margin-top:4px;white-space:nowrap}
+.k.dark{background:var(--navy);color:#fff;border-color:var(--navy)}.k.dark small{color:#A9BDCB}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.card-h h2{margin:0;font-size:17px}
+.tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 10px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:980px}
+th{text-align:left;font-size:11.5px;color:#fff;background:var(--navy);font-weight:600;padding:11px 12px}
+td{padding:11px 12px;border-top:1px solid var(--line);font-size:13px;vertical-align:top}
+td.n{white-space:nowrap;text-align:right}th.n{text-align:right}
+td.st{min-width:200px;color:var(--ink-2)}
+tr.tot td{background:var(--card-2);font-weight:700}
+.msg{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px;text-align:center;color:var(--ink-2)}
+@media (max-width:760px){.kpis{grid-template-columns:1fr 1fr}.ro{margin-left:0}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><div><b>Grupo Exponencial · Reporte de cobranza B2B</b><small>Compartido por Fernanda · Chief Account Manager</small></div><span class="ro">Solo lectura · siempre actualizado</span></div></header>
+<div class="strip"></div>
+<main id="m"><div class="msg">Cargando reporte…</div></main>
+<script src="config.js"></script>
+<script>
+(async () => {
+  const m = document.getElementById('m'), C = window.EXPONENCIAL_CONFIG, t = new URLSearchParams(location.search).get('t');
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const mx = n => '$\u00a0' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fd = d => { if (!d) return '—'; const M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return `${+d.slice(8)} ${M[+d.slice(5, 7) - 1]}`; };
+  if (!t) { m.innerHTML = '<div class="msg">Esta liga no es válida. Solicita la liga correcta a Fernanda.</div>'; return; }
+  try {
+    const r = await fetch(`${C.supabaseUrl}/functions/v1/notificaciones`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: C.supabaseAnonKey, Authorization: `Bearer ${C.supabaseAnonKey}` }, body: JSON.stringify({ accion: 'reporte_datos', t }) });
+    const d = await r.json(); if (!d.ok) throw new Error(d.error || 'Sin acceso');
+    const s = (a, k) => a.reduce((x, y) => x + Number(y[k] || 0), 0);
+    const tabla = (rows, uvm) => `<div class="tw"><table><thead><tr><th>No.</th><th>Empresa</th><th>Programa</th>${uvm ? '<th>Nombre UVM</th>' : ''}<th>Factura</th>${uvm ? '<th>OC</th><th>Recepción</th>' : ''}<th class="n">Total</th><th class="n">Pagado</th><th class="n">Por cobrar</th><th class="n">Saldo</th><th>Próximo pago</th><th>Estatus</th></tr></thead><tbody>
+      ${rows.map((x, i) => `<tr><td>${i + 1}</td><td><b>${esc(x.empresa)}</b></td><td>${esc(x.programa)}</td>${uvm ? `<td>${esc(x.nombre_uvm || '—')}</td>` : ''}<td>${esc(x.factura || 'Pendiente')}</td>${uvm ? `<td>${esc(x.oc || 'Pendiente')}</td><td>${esc(x.recepcion || 'Pendiente')}</td>` : ''}<td class="n">${mx(x.total)}</td><td class="n">${mx(x.pagado)}</td><td class="n"><b>${mx(x.por_cobrar)}</b></td><td class="n">${mx(x.total - x.pagado)}</td><td>${fd(x.proximo)}</td><td class="st">${esc(x.estatus)}</td></tr>`).join('') || `<tr><td colspan="${uvm ? 13 : 10}">Sin programas por reportar.</td></tr>`}
+      ${rows.length ? `<tr class="tot"><td></td><td colspan="${uvm ? 6 : 3}">Total</td><td class="n">${mx(s(rows, 'total'))}</td><td class="n">${mx(s(rows, 'pagado'))}</td><td class="n" style="color:var(--bad)">${mx(s(rows, 'por_cobrar'))}</td><td class="n">${mx(s(rows, 'total') - s(rows, 'pagado'))}</td><td></td><td></td></tr>` : ''}</tbody></table></div>`;
+    m.innerHTML = `<div><h1>Corte al ${fd(d.corte)}</h1><div class="sub">Montos con IVA. "Por cobrar" son los pagos pendientes con fecha hasta el ${fd(d.limite)}; "Saldo" es el total menos lo pagado.</div></div>
+      <div class="kpis"><div class="k dark"><small>Por cobrar B2B</small><b>${mx(s(d.uvm, 'por_cobrar') + s(d.exp, 'por_cobrar'))}</b></div><div class="k"><small>UVM</small><b>${mx(s(d.uvm, 'por_cobrar'))}</b></div><div class="k"><small>Exponencial</small><b>${mx(s(d.exp, 'por_cobrar'))}</b></div><div class="k"><small>Pagado acumulado</small><b>${mx(s(d.uvm, 'pagado') + s(d.exp, 'pagado'))}</b></div></div>
+      <section class="card"><div class="card-h"><h2>UVM</h2><span class="tag" style="background:#E5383B;color:#fff">UVM</span></div>${tabla(d.uvm, true)}</section>
+      <section class="card"><div class="card-h"><h2>Exponencial</h2><span class="tag" style="background:#B5E61D;color:#1B1B1D">Exponencial</span></div>${tabla(d.exp, false)}</section>
+      <p class="sub">Generado automáticamente por la plataforma Exponencial. Para dudas sobre algún pago, escribir a pr@grupoexponencial.com.</p>`;
+  } catch (e) { m.innerHTML = '<div class="msg">No fue posible cargar el reporte. Verifica la liga o intenta más tarde.</div>'; }
+})();
+</script>
+</body>
+</html>

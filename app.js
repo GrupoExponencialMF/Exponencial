@@ -1,6 +1,6 @@
 /* =====================================================================
-   Exponencial · Centro de mando · Etapa 1
-   Inicio, captura rápida, Pendientes, Recordatorios y Ajustes
+   Exponencial · Centro de mando
+   Núcleo: sesión, Inicio, captura rápida, Pendientes, Recordatorios y Ajustes
    ===================================================================== */
 (() => {
 'use strict';
@@ -40,13 +40,14 @@ const LOGO = '<svg viewBox="0 0 20 20" width="20" height="20" fill="none"><path 
 
 const FRENTES = { 'B2B': ['B2B', 'var(--c-b2b)'], 'I&D': ['Innovación & Disrupción', 'var(--c-id)'], 'CoS': ['Chief of Staff', 'var(--c-cos)'], 'Personal': ['Personal', 'var(--c-per)'] };
 const FR_CORTO = { 'B2B': 'B2B', 'I&D': 'I&D', 'CoS': 'Chief of Staff', 'Personal': 'Personal' };
+const ACTIVOS = ['B2B', 'CoS', 'Personal']; // frentes de esta plataforma
 const ESTATUS = [['Pendiente', 'var(--bad)'], ['En progreso', 'var(--warn)'], ['Necesita revisión', 'var(--info)'], ['Terminado', 'var(--good)']];
 const NOTIF = {
   resumen_dia: ['Resumen del día', 'Diario, 9:00 a.m.'], recordatorios: ['Recordatorios', 'Aviso previo y hora exacta'],
   pendientes: ['Pendientes', 'A su hora; por correo solo los importantes'], forecast_terminado: ['Forecast terminado', 'Con Excel adjunto'],
   resumen_dashboard: ['Resúmenes de dashboard', 'Cuando los solicites'], dia_cobro: ['Día de cobro', '9:00 a.m. del día del pago'],
   resumen_viernes: ['Resumen del viernes', 'Cobros de la próxima semana'], reporte_finanzas: ['Reporte para Finanzas', 'Viernes, listo para reenviar'],
-  confirmacion_lunes: ['Confirmación de Finanzas', 'Lunes, 9:00 a.m.'], entregas_equipo: ['Entregas de tu equipo', 'Hora de entrega de cada actividad'],
+  confirmacion_lunes: ['Confirmación de Finanzas', 'Lunes, 9:00 a.m.'],
   modulos_programas: ['Módulos de programas', 'Inicio y fin de cada módulo'], acuerdos_hitos: ['Acuerdos, hitos y juntas', 'Fecha compromiso']
 };
 const apill = f => `<span class="apill" style="--c:${FRENTES[f][1]}"><i></i>${esc(FR_CORTO[f])}</span>`;
@@ -56,6 +57,11 @@ const S = { user: null, ajustes: null, prefs: [], catalogos: [], pendientes: [],
   empresas: [], cuentas: [], propuestas: [], seguimientos: [], forecasts: [], fgrupos: [], fegresos: [], fotoUrls: {},
   qTipo: 'Pendiente', qFrente: 'B2B', pFrente: 'Todas', pPeriodo: 'Todos', pVista: 'Tarjetas', rFrente: 'Todas' };
 
+function allP() { return S.pendientes; }
+async function setEstatusItem(id, estatus) {
+  const p = S.pendientes.find(x => x.id === id); const d = await handle(await sb.from('pendientes').update({ estatus }).eq('id', id).select().single(), `Movido a ${estatus}`); if (d) Object.assign(p, d); return !!d;
+}
+function abrirItem(id) { pendForm(S.pendientes.find(x => x.id === id)); }
 const isLate = p => p.estatus !== 'Terminado' && (p.fecha_limite < today() || (p.fecha_limite === today() && hm(p.hora_limite) < nowHM()));
 const sortAgenda = (a, b, f, h) => (a[f] + hm(a[h])).localeCompare(b[f] + hm(b[h]));
 const dueChip = p => {
@@ -73,28 +79,14 @@ async function handle(res, okMsg) {
   if (okMsg) toast(okMsg);
   return res.data ?? true;
 }
+const TABLAS = ['preferencias_notificacion', 'catalogos', 'pendientes', 'recordatorios', 'empresas', 'cuentas', 'propuestas', 'seguimientos', 'forecasts', 'forecast_grupos', 'forecast_egresos',
+  'ventas', 'ventas_bitacora', 'pagos', 'programas', 'modulos', 'areas', 'juntas', 'acuerdos', 'interarea', 'hitos'];
+const ALIAS = { preferencias_notificacion: 'prefs', forecast_grupos: 'fgrupos', forecast_egresos: 'fegresos' };
 async function loadAll() {
-  const [a, p, c, pe, re, em, cu, pr, sg, fo, fg, fe] = await Promise.all([
-    sb.from('ajustes').select('*').maybeSingle(),
-    sb.from('preferencias_notificacion').select('*'),
-    sb.from('catalogos').select('*'),
-    sb.from('pendientes').select('*'),
-    sb.from('recordatorios').select('*'),
-    sb.from('empresas').select('*'),
-    sb.from('cuentas').select('*'),
-    sb.from('propuestas').select('*'),
-    sb.from('seguimientos').select('*'),
-    sb.from('forecasts').select('*'),
-    sb.from('forecast_grupos').select('*'),
-    sb.from('forecast_egresos').select('*')
-  ]);
-  const err = [a, p, c, pe, re].find(r => r.error);
-  if (err) { console.error(err.error); toast('Error al cargar tu información. Revisa tu conexión.'); }
-  S.ajustes = a.data || {}; S.prefs = p.data || []; S.catalogos = c.data || [];
-  S.pendientes = pe.data || []; S.recordatorios = re.data || [];
-  S.empresas = em.data || []; S.cuentas = cu.data || []; S.propuestas = pr.data || []; S.seguimientos = sg.data || [];
-  S.forecasts = fo.data || []; S.fgrupos = fg.data || []; S.fegresos = fe.data || [];
-  if ([em, cu, pr].some(r => r.error)) console.warn('Tablas comerciales no disponibles todavía (ejecuta el script de la etapa 3).');
+  const [a, ...rs] = await Promise.all([sb.from('ajustes').select('*').maybeSingle(), ...TABLAS.map(t => sb.from(t).select('*'))]);
+  if (a.error) { console.error(a.error); toast('Error al cargar tu información. Revisa tu conexión.'); }
+  S.ajustes = a.data || {};
+  rs.forEach((r, i) => { const t = TABLAS[i]; if (r.error) console.warn('Tabla no disponible:', t, r.error.message); S[ALIAS[t] || t] = r.data || []; });
   applyColors();
 }
 function applyColors() {
@@ -124,18 +116,20 @@ function renderLogin(msg = '') {
 
 /* ---------- Estructura ---------- */
 const NAV = [['home', 'Inicio', 'home'], ['pend', 'Pendientes', 'task'], ['rem', 'Recordatorios', 'rem'], ['set', 'Ajustes', 'set']];
-const B2B_VIEWS = ['cuen', 'prop', 'fore'];
+const B2B_VIEWS = ['b2bd', 'cuen', 'prop', 'fore', 'vent', 'progs'], ID_VIEWS = [], COS_VIEWS = ['cosd', 'inter', 'enc', 'jun', 'salud'];
 const SUBTABS = {
-  b2b: [['cuen', 'Cuentas'], ['prop', 'Propuestas'], ['fore', 'Forecast'], [null, 'Ventas · etapa 4']],
+  b2b: [['b2bd', 'Dashboard'], ['cuen', 'Cuentas'], ['prop', 'Propuestas'], ['fore', 'Forecast'], ['vent', 'Ventas'], ['progs', 'Programas en curso']],
+  cos: [['cosd', 'Dashboard'], ['inter', 'Proyectos interárea'], ['enc', 'Encargos de Dirección'], ['jun', 'Juntas y acuerdos'], ['salud', 'Salud de áreas']],
   org: [['pend', 'Pendientes'], ['rem', 'Recordatorios']]
 };
+const grupoDe = v => B2B_VIEWS.includes(v) ? 'b2b' : ID_VIEWS.includes(v) ? 'id' : COS_VIEWS.includes(v) ? 'cos' : ['pend', 'rem'].includes(v) ? 'org' : null;
 function subtabsFor(v) {
-  const g = B2B_VIEWS.includes(v) ? 'b2b' : ['pend', 'rem'].includes(v) ? 'org' : null;
+  const g = grupoDe(v);
   if (!g) return '';
   return `<div class="subtabs" role="tablist">${SUBTABS[g].map(([k, l]) => k ? `<button data-go="${k}" class="${v === k ? 'on' : ''}">${l}</button>` : `<button disabled>${l}</button>`).join('')}</div>`;
 }
 function shell(title, actions = '') {
-  const late = S.pendientes.filter(isLate).length;
+  const late = allP().filter(isLate).length;
   const d = new Date();
   return `<div class="shell">
     <aside class="side" aria-label="Navegación">
@@ -144,26 +138,26 @@ function shell(title, actions = '') {
         <div class="ngroup">Mi día</div>
         ${NAV.slice(0, 3).map(([k, l, i]) => `<button data-go="${k}" class="${S.view === k ? 'on' : ''}">${svg(i)}${l}${k === 'pend' && late ? `<span class="count">${late}</span>` : ''}</button>`).join('')}
         <div class="ngroup">Mis frentes</div>
-        <button data-go="cuen" class="${B2B_VIEWS.includes(S.view) ? 'on' : ''}">${svg('sale')}B2B</button>
-        <button disabled>${svg('bulb')}Innovación & Disrupción<span class="soon">Etapa 5</span></button>
-        <button disabled>${svg('star')}Chief of Staff<span class="soon">Etapa 6</span></button>
+        <button data-go="b2bd" class="${B2B_VIEWS.includes(S.view) ? 'on' : ''}">${svg('sale')}B2B</button>
+        <button data-go="cosd" class="${COS_VIEWS.includes(S.view) ? 'on' : ''}">${svg('star')}Chief of Staff</button>
         <div class="ngroup">Sistema</div>
         <button data-go="set" class="${S.view === 'set' ? 'on' : ''}">${svg('set')}Ajustes</button>
       </nav>
       <div class="side-foot"><span class="avatar">FA</span><div style="min-width:0;flex:1"><b style="font-size:13px">Fernanda</b><small>${esc(S.user?.email || '')}</small></div><button class="sf-out" id="sideOut" title="Cerrar sesión" aria-label="Cerrar sesión">${svg('out')}</button></div>
     </aside>
     <main class="main">
+      <div class="mtop"><button class="icon-btn ${S.view === 'home' ? 'on' : ''}" data-go="home" aria-label="Inicio">${svg('home')}</button><button class="icon-btn ${S.view === 'set' ? 'on' : ''}" data-go="set" aria-label="Ajustes">${svg('set')}</button></div>
       <div class="top"><h1>${title}</h1><span class="date">${cap(DIA[d.getDay()])} ${d.getDate()} de ${MES[d.getMonth()]}, ${d.getFullYear()}</span><div class="actions">${actions}</div></div>
       ${subtabsFor(S.view)}
       <div id="view"></div>
     </main>
   </div>
   <nav class="mtabs" aria-label="Secciones">
-    <button data-go="home" class="${S.view === 'home' ? 'on' : ''}">${svg('home')}Inicio</button>
-    <button data-go="cuen" class="${B2B_VIEWS.includes(S.view) ? 'on' : ''}">${svg('sale')}B2B</button>
+    <button data-go="b2bd" class="${B2B_VIEWS.includes(S.view) ? 'on' : ''}">${svg('sale')}B2B</button>
+    <button data-go="cosd" class="${COS_VIEWS.includes(S.view) ? 'on' : ''}">${svg('star')}Chief</button>
     <button class="cap" id="mcap" aria-label="Captura rápida">${svg('plus')}</button>
-    <button data-go="pend" class="${['pend', 'rem'].includes(S.view) ? 'on' : ''}">${svg('task')}Pendientes</button>
-    <button data-go="set" class="${S.view === 'set' ? 'on' : ''}">${svg('set')}Ajustes</button>
+    <button data-go="pend" class="${S.view === 'pend' ? 'on' : ''}">${svg('task')}Pendientes${late ? `<span class="mcnt">${late}</span>` : ''}</button>
+    <button data-go="rem" class="${S.view === 'rem' ? 'on' : ''}">${svg('rem')}Recordatorios</button>
   </nav>`;
 }
 function bindShell() {
@@ -174,7 +168,7 @@ function bindShell() {
 function go(v) { S.view = v; render(); window.scrollTo({ top: 0 }); }
 const VIEWS = {};
 function render() {
-  document.body.dataset.area = B2B_VIEWS.includes(S.view) ? 'b2b' : 'home';
+  const g = grupoDe(S.view); document.body.dataset.area = ['b2b', 'cos'].includes(g) ? g : 'home';
   (VIEWS[S.view] || VIEWS.home)();
 }
 
@@ -183,8 +177,8 @@ function renderHome() {
   const t = today(), d = new Date();
   const saludo = d.getHours() < 12 ? 'Buenos días' : d.getHours() < 19 ? 'Buenas tardes' : 'Buenas noches';
   $('#app').innerHTML = shell(`${saludo}, Fernanda`, `<button class="btn btn-dark" id="newBtn">${svg('plus')}Nuevo</button>`);
-  const hoy = S.pendientes.filter(p => p.fecha_limite === t).sort((a, b) => sortAgenda(a, b, 'fecha_limite', 'hora_limite'));
-  const venc = S.pendientes.filter(p => isLate(p) && p.fecha_limite < t).sort((a, b) => sortAgenda(a, b, 'fecha_limite', 'hora_limite'));
+  const hoy = allP().filter(p => p.fecha_limite === t).sort((a, b) => sortAgenda(a, b, 'fecha_limite', 'hora_limite'));
+  const venc = allP().filter(p => isLate(p) && p.fecha_limite < t).sort((a, b) => sortAgenda(a, b, 'fecha_limite', 'hora_limite'));
   const done = hoy.filter(p => p.estatus === 'Terminado').length;
   const remHoy = S.recordatorios.filter(r => !r.hecho && r.fecha === t).sort((a, b) => sortAgenda(a, b, 'fecha', 'hora'));
   const prox = S.recordatorios.filter(r => !r.hecho && (r.fecha > t || (r.fecha === t && hm(r.hora) >= nowHM()))).sort((a, b) => sortAgenda(a, b, 'fecha', 'hora')).slice(0, 6);
@@ -196,14 +190,15 @@ function renderHome() {
   $('#view').innerHTML = `
     <section class="feature"><div class="day">
       <div class="ring"><svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="${r}" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="10"/><circle cx="55" cy="55" r="${r}" fill="none" stroke="#8DC53E" stroke-width="10" stroke-linecap="round" stroke-dasharray="${v} ${C}" transform="rotate(-90 55 55)"/></svg><div><b>${done}/${hoy.length}</b><small>hoy</small></div></div>
-      <div class="dbars">${['B2B', 'I&D', 'CoS', 'Personal'].map(per).map(([l, a, b, c]) => `<div class="dbar" style="--c:${c}"><span>${esc(l)}</span><div><i style="width:${b ? a / b * 100 : 0}%"></i></div><b>${a}/${b}</b></div>`).join('')}</div>
+      <div class="dbars">${ACTIVOS.map(per).map(([l, a, b, c]) => `<div class="dbar" style="--c:${c}"><span>${esc(l)}</span><div><i style="width:${b ? a / b * 100 : 0}%"></i></div><b>${a}/${b}</b></div>`).join('')}</div>
     </div><div class="flab">${hoy.length - done} por cerrar hoy · ${venc.length} vencidos · ${remHoy.length} recordatorios hoy</div></section>
     <section class="qcap" aria-label="Captura rápida"><div class="card-head" style="margin:0"><h3>Captura rápida</h3><span class="sub">Escríbelo antes de que se te olvide.</span>
       <div class="seg right" id="qt">${['Pendiente', 'Recordatorio'].map(x => `<button data-x="${x}" class="${S.qTipo === x ? 'on' : ''}">${x}</button>`).join('')}</div></div>
       <div class="qrow"><input class="in q-in" id="qx" placeholder="${S.qTipo === 'Pendiente' ? '¿Qué tienes que hacer?' : '¿Qué quieres recordar?'}" aria-label="Texto"></div>
-      <div class="qrow"><div class="chips" id="qf">${Object.keys(FRENTES).map(f => `<button class="chip ${S.qFrente === f ? 'on' : ''}" data-x="${f}" style="--c:${FRENTES[f][1]}">${esc(FR_CORTO[f])}</button>`).join('')}</div></div>
+      <div class="qrow"><div class="chips" id="qf">${ACTIVOS.map(f => `<button class="chip ${S.qFrente === f ? 'on' : ''}" data-x="${f}" style="--c:${FRENTES[f][1]}">${esc(FR_CORTO[f])}</button>`).join('')}</div></div>
       <div class="qrow"><input class="in q-dt" type="date" id="qd" value="${t}" aria-label="Fecha"><input class="in q-hr" type="time" id="qh" value="${S.qTipo === 'Pendiente' ? '10:00' : '12:00'}" aria-label="Hora"><button class="btn btn-dark" id="qok" style="margin-left:auto">Guardar</button></div>
     </section>
+    ${window.EXP && window.EXP.homeExtra ? window.EXP.homeExtra() : ''}
     <div class="grid2">
       <section class="card"><div class="card-head"><h3>Hoy y vencidos</h3><button class="btn btn-ghost right" style="height:34px;font-size:12px" data-go="pend">Ver todos</button></div>
         ${venc.length ? `<div class="hl bad">Vencidos</div><div class="rows">${venc.map(item).join('')}</div>` : ''}
@@ -233,11 +228,10 @@ function renderHome() {
 }
 function bindRows() {
   $$('[data-done]').forEach(b => b.onclick = async () => {
-    const p = S.pendientes.find(x => x.id === b.dataset.done); const nuevo = p.estatus === 'Terminado' ? 'Pendiente' : 'Terminado';
-    const data = await handle(await sb.from('pendientes').update({ estatus: nuevo }).eq('id', p.id).select().single(), nuevo === 'Terminado' ? 'Pendiente terminado' : 'Pendiente reabierto');
-    if (data) { Object.assign(p, data); render(); }
+    const p = allP().find(x => x.id === b.dataset.done); const nuevo = p.estatus === 'Terminado' ? 'Pendiente' : 'Terminado';
+    if (await setEstatusItem(p.id, nuevo)) render();
   });
-  $$('[data-pen]').forEach(b => b.onclick = () => pendForm(S.pendientes.find(x => x.id === b.dataset.pen)));
+  $$('[data-pen]').forEach(b => b.onclick = () => abrirItem(b.dataset.pen));
   $$('[data-rec]').forEach(b => b.onclick = () => remForm(S.recordatorios.find(x => x.id === b.dataset.rec)));
 }
 
@@ -253,7 +247,7 @@ function chooseNew() {
     <button class="card" id="chR" style="text-align:left"><h3>Recordatorio</h3><p class="sub" style="margin:6px 0 0">Un aviso en fecha y hora, sin estatus.</p></button></div>`);
   $('#chP').onclick = () => pendForm(); $('#chR').onclick = () => remForm();
 }
-const frenteOpts = (id, cur) => `<div class="chips" id="${id}">${Object.keys(FRENTES).map(f => `<button type="button" class="chip ${cur === f ? 'on' : ''}" data-x="${f}" style="--c:${FRENTES[f][1]}">${esc(FRENTES[f][0])}</button>`).join('')}</div>`;
+const frenteOpts = (id, cur) => `<div class="chips" id="${id}">${[...new Set([...ACTIVOS, ...(cur && !ACTIVOS.includes(cur) ? [cur] : [])])].map(f => `<button type="button" class="chip ${cur === f ? 'on' : ''}" data-x="${f}" style="--c:${FRENTES[f][1]}">${esc(FRENTES[f][0])}</button>`).join('')}</div>`;
 const bindChoice = id => $$(`#${id} button`).forEach(b => b.onclick = () => $$(`#${id} button`).forEach(x => x.classList.toggle('on', x === b)));
 const picked = id => $(`#${id} .on`)?.dataset.x;
 
@@ -337,17 +331,17 @@ function remForm(r) {
 function renderPend() {
   $('#app').innerHTML = shell('Pendientes', `<button class="btn btn-dark" id="newP">${svg('plus')}Nuevo pendiente</button>`);
   const t = today(), wk = addDays(t, 6);
-  const list = S.pendientes.filter(p => (S.pFrente === 'Todas' || p.frente === S.pFrente) &&
+  const list = allP().filter(p => (S.pFrente === 'Todas' || p.frente === S.pFrente) &&
     (S.pPeriodo === 'Todos' || (S.pPeriodo === 'Hoy' ? (p.fecha_limite <= t && (p.estatus !== 'Terminado' || p.fecha_limite === t)) : p.fecha_limite > t && p.fecha_limite <= wk)))
     .sort((a, b) => (a.estatus === 'Terminado') - (b.estatus === 'Terminado') || sortAgenda(a, b, 'fecha_limite', 'hora_limite'));
   const card = p => `<button class="tcard" draggable="true" data-pen="${p.id}" data-id="${p.id}"><div class="tc-top">${apill(p.frente)}${p.importante ? '<span class="pill imp">Importante</span>' : ''}${dueChip(p)}</div>
     <div class="tc-t ${p.estatus === 'Terminado' ? 'struck' : ''}">${esc(p.titulo)}</div>${p.es_encargo_dg ? '<div class="tc-n">Encargo de Dirección General</div>' : ''}${p.notas ? `<div class="tc-n">${esc(p.notas)}</div>` : ''}
     <div class="tc-n" style="margin-top:6px">${esc(p.responsable)}${p.tipo ? ' · ' + esc(p.tipo) : ''}</div></button>`;
   $('#view').innerHTML = `<div class="toolbar">
-      <div class="chips" id="pff">${['Todas', ...Object.keys(FRENTES)].map(f => `<button class="chip ${S.pFrente === f ? 'on' : ''}" data-x="${f}" style="--c:${f === 'Todas' ? 'var(--ink)' : FRENTES[f][1]}">${f === 'Todas' ? 'Todas' : esc(FR_CORTO[f])}</button>`).join('')}</div>
+      <div class="chips" id="pff">${['Todas', ...ACTIVOS].map(f => `<button class="chip ${S.pFrente === f ? 'on' : ''}" data-x="${f}" style="--c:${f === 'Todas' ? 'var(--ink)' : FRENTES[f][1]}">${f === 'Todas' ? 'Todas' : esc(FR_CORTO[f])}</button>`).join('')}</div>
       <div class="right"><div class="seg" id="pper">${['Hoy', 'Próximos', 'Todos'].map(x => `<button data-x="${x}" class="${S.pPeriodo === x ? 'on' : ''}">${x === 'Próximos' ? 'Próximos 7 días' : x}</button>`).join('')}</div>
       <div class="seg" id="pvis">${['Tarjetas', 'Lista'].map(x => `<button data-x="${x}" class="${S.pVista === x ? 'on' : ''}">${x}</button>`).join('')}</div></div></div>
-    ${!S.pendientes.length ? '<div class="empty">Aún no tienes pendientes. Crea el primero con el botón "Nuevo pendiente" o desde la captura rápida de Inicio.</div>'
+    ${!allP().length ? '<div class="empty">Aún no tienes pendientes. Crea el primero con el botón "Nuevo pendiente" o desde la captura rápida de Inicio.</div>'
     : S.pVista === 'Tarjetas' ? `<div class="board">${ESTATUS.map(([k, c]) => { const xs = list.filter(p => p.estatus === k); return `<div class="bcol" data-col="${k}" style="--c:${c}"><div class="bcol-h"><i></i>${k}<span class="cnt">${xs.length}</span></div>${xs.map(card).join('')}</div>`; }).join('')}</div><p class="sub">Arrastra una tarjeta a otra columna para cambiar su estatus, o haz clic para editarla.</p>`
     : `<div class="list-wrap"><table class="list"><thead><tr><th></th><th>Pendiente</th><th>Frente</th><th>Responsable</th><th>Fecha y hora</th><th>Estatus</th></tr></thead><tbody>${list.map(p => `<tr><td><button class="check ${p.estatus === 'Terminado' ? 'on' : ''}" data-done="${p.id}" aria-label="Terminar"></button></td><td><button class="row-main" data-pen="${p.id}"><b class="${p.estatus === 'Terminado' ? 'struck' : ''}">${esc(p.titulo)}</b>${p.notas ? `<div class="sub">${esc(p.notas)}</div>` : ''}</button></td><td>${apill(p.frente)}</td><td>${esc(p.responsable)}</td><td>${dueChip(p)}</td><td><select class="in st-sel" data-sts="${p.id}">${ESTATUS.map(([s]) => `<option ${p.estatus === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td></tr>`).join('') || '<tr><td colspan="6" class="sub">Sin pendientes con estos filtros.</td></tr>'}</tbody></table></div>`}`;
   bindShell(); bindRows();
@@ -355,7 +349,7 @@ function renderPend() {
   $$('#pff button').forEach(b => b.onclick = () => { S.pFrente = b.dataset.x; renderPend(); });
   $$('#pper button').forEach(b => b.onclick = () => { S.pPeriodo = b.dataset.x; renderPend(); });
   $$('#pvis button').forEach(b => b.onclick = () => { S.pVista = b.dataset.x; renderPend(); });
-  const setStatus = async (id, st) => { const p = S.pendientes.find(x => x.id === id); if (!p || p.estatus === st) return; const data = await handle(await sb.from('pendientes').update({ estatus: st }).eq('id', id).select().single(), `Movido a ${st}`); if (data) { Object.assign(p, data); renderPend(); } };
+  const setStatus = async (id, st) => { const p = allP().find(x => x.id === id); if (!p || p.estatus === st) return; if (await setEstatusItem(id, st)) renderPend(); };
   $$('[data-sts]').forEach(s => s.onchange = () => setStatus(s.dataset.sts, s.value));
   let drag = null;
   $$('.tcard').forEach(c => { c.ondragstart = () => { drag = c.dataset.id; c.classList.add('dragging'); }; c.ondragend = () => c.classList.remove('dragging'); });
@@ -369,7 +363,7 @@ function renderRem() {
   const list = S.recordatorios.filter(r => (S.rFrente === 'Todas' || r.frente === S.rFrente)).sort((a, b) => sortAgenda(a, b, 'fecha', 'hora'));
   const pend = list.filter(r => !r.hecho && r.fecha >= t), past = list.filter(r => r.hecho || r.fecha < t).reverse().slice(0, 15);
   const days = [...new Set(pend.map(r => r.fecha))];
-  $('#view').innerHTML = `<div class="toolbar"><div class="chips" id="rff">${['Todas', ...Object.keys(FRENTES)].map(f => `<button class="chip ${S.rFrente === f ? 'on' : ''}" data-x="${f}" style="--c:${f === 'Todas' ? 'var(--ink)' : FRENTES[f][1]}">${f === 'Todas' ? 'Todas' : esc(FR_CORTO[f])}</button>`).join('')}</div></div>
+  $('#view').innerHTML = `<div class="toolbar"><div class="chips" id="rff">${['Todas', ...ACTIVOS].map(f => `<button class="chip ${S.rFrente === f ? 'on' : ''}" data-x="${f}" style="--c:${f === 'Todas' ? 'var(--ink)' : FRENTES[f][1]}">${f === 'Todas' ? 'Todas' : esc(FR_CORTO[f])}</button>`).join('')}</div></div>
     ${days.length ? days.map(d => `<section class="card"><div class="card-head"><h3>${d === t ? 'Hoy' : cap(fdLong(d))}</h3><span class="sub right">${pend.filter(r => r.fecha === d).length} recordatorio(s)</span></div>
       ${pend.filter(r => r.fecha === d).map(r => `<div class="ag" style="--c:${FRENTES[r.frente][1]}"><div class="w"><b>${hm(r.hora)}</b><small>${esc(FR_CORTO[r.frente])}</small></div><button class="c" data-rec="${r.id}"><div class="t">${esc(r.titulo)}</div><div class="s">${r.relacionado_con ? esc(r.relacionado_con) + ' · ' : ''}${esc(r.nota || FRENTES[r.frente][0])}</div></button></div>`).join('')}</section>`).join('')
     : '<div class="empty">No tienes recordatorios próximos. Crea uno con el botón "Nuevo recordatorio".</div>'}
@@ -395,7 +389,7 @@ function renderSet() {
   const prefs = Object.keys(NOTIF).map(k => S.prefs.find(p => p.tipo === k) || { tipo: k, correo: true, app: true });
   $('#view').innerHTML = `<div class="set-grid">
     <div style="display:flex;flex-direction:column;gap:16px">
-      <section class="card"><h3>Notificaciones</h3><p class="sub">Elige el canal de cada aviso. Los envíos se activan en la etapa 2; tus preferencias ya quedan guardadas.</p>
+      <section class="card"><h3>Notificaciones</h3><p class="sub">Elige el canal de cada aviso: correo, notificación en tus dispositivos o ambos.</p>
         <div class="colorrow"><div style="flex:1"><div class="t" style="font-weight:600">Aviso previo</div><div class="sub">Antes de la hora exacta</div></div><select class="in" id="aviso" style="width:150px">${[[0, 'Sin aviso previo'], [15, '15 min antes'], [30, '30 min antes'], [60, '1 hora antes'], [1440, '1 día antes']].map(([v, l]) => `<option value="${v}" ${a.aviso_previo_min == v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="colorrow"><div style="flex:1"><div class="t" style="font-weight:600">Correo de avisos</div><div class="sub">${esc(a.correo_notificaciones || '')}</div></div></div>
         <div class="nrow h"><span></span><span>Correo</span><span>App</span></div>
@@ -406,8 +400,11 @@ function renderSet() {
       <section class="card"><h3>Avisos en este dispositivo</h3><p class="sub" id="pushSt">Revisando…</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-dark" id="pushOn">Activar avisos</button><button class="btn btn-ghost" id="pushTest">Enviar prueba</button></div>
       </section>
+      <section class="card"><h3>Metas de venta</h3><p class="sub">Con IVA. El dashboard B2B compara tus ventas contra estas metas.</p>
+        <div class="fgrid">${[['meta_anual_exp', 'Anual · Exponencial'], ['meta_anual_uvm', 'Anual · UVM'], ['meta_mensual_exp', 'Mensual · Exponencial'], ['meta_mensual_uvm', 'Mensual · UVM'], ['meta_rentabilidad', 'Meta de rentabilidad (%)']].map(([k, l]) => `<label class="f"><span>${l}</span><input class="in" type="number" min="0" step="1" data-meta="${k}" value="${a[k] ?? ''}"></label>`).join('')}</div>
+      </section>
       <section class="card"><h3>Colores de la plataforma</h3><p class="sub">Azul marino Exponencial como base y un color por frente.</p>
-        ${[['color_base', 'Base · Exponencial'], ['color_b2b', 'B2B'], ['color_id', 'Innovación & Disrupción'], ['color_cos', 'Chief of Staff']].map(([k, l]) => `<label class="colorrow"><input type="color" data-col="${k}" value="${esc(a[k] || '#14394D')}"><span style="flex:1;font-weight:600">${l}</span></label>`).join('')}
+        ${[['color_base', 'Base · Exponencial'], ['color_b2b', 'B2B'], ['color_cos', 'Chief of Staff']].map(([k, l]) => `<label class="colorrow"><input type="color" data-col="${k}" value="${esc(a[k] || '#14394D')}"><span style="flex:1;font-weight:600">${l}</span></label>`).join('')}
       </section>
       <section class="card"><h3>Catálogos</h3><p class="sub">Escribe y presiona Enter para agregar. Los colores se cambian tocando el círculo.</p>
         ${CATALOGOS.map(([k, l, col]) => catEditor(k, l, col)).join('')}
@@ -430,6 +427,7 @@ function renderSet() {
   $('#logout').onclick = cerrarSesion;
   $('#reload').onclick = async () => { await loadAll(); renderSet(); toast('Datos actualizados'); };
   $('#aviso').onchange = async e => { const v = +e.target.value; if (await handle(await sb.from('ajustes').update({ aviso_previo_min: v }).eq('user_id', S.user.id), 'Aviso previo actualizado')) S.ajustes.aviso_previo_min = v; };
+  $$('[data-meta]').forEach(i => i.onchange = async () => { const k = i.dataset.meta, v = Number(i.value) || 0; if (await handle(await sb.from('ajustes').update({ [k]: v }).eq('user_id', S.user.id), 'Meta guardada')) S.ajustes[k] = v; });
   $$('[data-col]').forEach(i => { i.oninput = () => { S.ajustes[i.dataset.col] = i.value; applyColors(); }; i.onchange = async () => { await handle(await sb.from('ajustes').update({ [i.dataset.col]: i.value }).eq('user_id', S.user.id), 'Color guardado'); }; });
   $$('[data-np]').forEach(b => b.onclick = async () => {
     const tipo = b.dataset.np, ch = b.dataset.ch; let p = S.prefs.find(x => x.tipo === tipo);
@@ -457,7 +455,7 @@ function renderSet() {
 Object.assign(VIEWS, { home: renderHome, pend: renderPend, rem: renderRem, set: renderSet });
 function empNombre(id) { return (S.empresas.find(e => e.id === id) || {}).nombre || 'Sin empresa'; }
 window.EXP = { sb, S, $, $$, esc, svg, ICON, toast, handle, shell, bindShell, bindRows, openSheet, closeSheet, head, go, render, VIEWS,
-  today, addDays, fdShort, fdLong, hm, cap, MES, MES3, apill, FRENTES, bindChoice, picked, pendForm, remForm, empNombre, loadAll };
+  today, addDays, fdShort, fdLong, hm, cap, MES, MES3, DIA, apill, FRENTES, bindChoice, picked, pendForm, remForm, empNombre, loadAll, allP, isLate, dueChip, ESTATUS, setEstatusItem };
 
 /* ---------- Cerrar sesión ---------- */
 async function cerrarSesion() {
