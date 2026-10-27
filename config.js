@@ -1,7 +1,6 @@
-// Conexión con Supabase. Si deja estos dos datos vacíos, la plataforma
-// los pide la primera vez que se abre en cada equipo.
+// Conexión con Supabase.
 // Supabase › Project Settings › Data API (Project URL) y API Keys (Publishable key).
 window.EXP_CONFIG = {
-  url: "",
-  key: ""
+  url: "https://ejbwnxlcvfpkggxqhsrp.supabase.co",
+  key: "sb_publishable_dyglIheCXjz7_LDExhT_LQ_H87su_la"
 };
