@@ -741,6 +741,9 @@ body.lg #avb{display:none}
 .lnk.dl{color:var(--bad)!important}.ti .lnk.dl{font-size:11.5px;margin-top:4px;padding:0}
 .igact{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px!important;font-size:12.5px}
 body:has(.dwb) #avb,body:has(.mdw) #avb{display:none}
+.elog.img{background:#fff;padding:0!important;box-shadow:none!important}.elog.img img{object-fit:cover;border-radius:inherit}
+.cb.img{padding:0!important;box-shadow:none!important}.cb.img img{object-fit:cover;border-radius:inherit}
+.lgprev{object-fit:cover}
 </style>
 </head>
 <body>
@@ -1131,7 +1134,7 @@ function guardar(){
     if(!v.emp)e.emp='Seleccione una empresa.';if(v.emp==='__n'&&!(v.empn||'').trim())e.empn='Escriba el nombre de la empresa.';
     if(!v.origen)e.origen='Seleccione el canal.';if(v.correo&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.correo))e.correo='Revise el formato del correo.';
     C.err=e;if(Object.keys(e).length)return false;
-    let emp=v.emp;if(emp==='__n'){emp='e'+(NID++);EMP[emp]={n:v.empn.trim(),c:v.empc||'#3D7BFF',logo:v.empl||null}}
+    let emp=v.emp;if(emp==='__n'){emp='e'+(NID++);EMP[emp]={n:v.empn.trim(),c:v.empc||'#3D7BFF',logo:v.empl||null,lt:1}}
     const cli=Number(v.fase||0)===6,id=NID++;CTA.unshift({id,nom:v.nom.trim(),ape:v.ape.trim(),puesto:(v.puesto||'').trim(),emp,correo:v.correo||'',tel:v.tel||'',tipo:cli?'Cliente':'Prospecto',origen:v.origen,fase:cli?6:Number(v.fase||0),estado:'Activo',desde:cli?HOY:null,segs:[],props:[],pend:[]});
     C.tab=cli?'Cliente':'Prospecto';C.open=id;return true}
   const c=CTA.find(x=>x.id===F.id);
@@ -1151,8 +1154,8 @@ function bindCuentas(){
   q('[data-oemp]',b=>b.onclick=()=>k(()=>C.openEmp=b.dataset.oemp));
   const ex=$('#ewx');if(ex)ex.onclick=()=>k(()=>C.openEmp=null);
   const eb=$('#ewb');if(eb)eb.onclick=e=>{if(e.target===eb)k(()=>C.openEmp=null)};
-  const toLogo=(f,cb)=>{if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const z=160,cv=document.createElement('canvas'),sc=Math.min(1,z/Math.max(im.width,im.height));cv.width=im.width*sc;cv.height=im.height*sc;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);cb(cv.toDataURL('image/png'))};im.src=r.result};r.readAsDataURL(f)};
-  const li=$('#logoin');if(li)li.onchange=e=>toLogo(e.target.files[0],u=>keep(()=>EMP[C.openEmp].logo=u));
+  const toLogo=leerLogo;
+  const li=$('#logoin');if(li)li.onchange=e=>toLogo(e.target.files[0],u=>keep(()=>{EMP[C.openEmp].logo=u;EMP[C.openEmp].lt=1}));
   const lb=$('#logobtn');if(lb)lb.onclick=()=>$('#logoin').click();
   const ld=$('#logodel');if(ld)ld.onclick=()=>k(()=>EMP[C.openEmp].logo=null);
   const nl=$('#newlogo');if(nl)nl.onchange=e=>toLogo(e.target.files[0],u=>keep(()=>C.form.v.empl=u));
@@ -1893,7 +1896,7 @@ function bindAjustes(){
   q('[data-col]',el=>el.onchange=()=>k(()=>{const c=el.dataset.col,v=el.value;if(c==='prosp')PROSP=v;else{CANALES[c].k=v;if(ORIG[c])ORIG[c].k=v}AJ.msg='Color actualizado en toda la plataforma.'}));
   q('[data-envt]',b=>b.onclick=()=>correoAhora({accion:b.dataset.envt},$('#envmsg')));
   const est=$('#enst');if(est)SB.rpc('exp_estado_envios').then(({data,error})=>{if(!$('#enst'))return;$('#enst').textContent=error?'No disponible: ejecute el script de la base de datos.':data&&data.activo?'Activos · revisión cada 15 minutos'+(data.ultimo?' · última: '+new Date(data.ultimo).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})+(data.estado&&data.estado!=='succeeded'?' ('+data.estado+')':''):''):'Inactivos: vuelva a iniciar sesión para activarlos.'});
-  q('[data-clogo]',el=>el.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const z=160,cv=document.createElement('canvas'),sc=Math.min(1,z/Math.max(im.width,im.height));cv.width=im.width*sc;cv.height=im.height*sc;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);keep(()=>{CANALES[el.dataset.clogo].logo=cv.toDataURL('image/png');AJ.msg='Logo actualizado en toda la plataforma.'})};im.src=r.result};r.readAsDataURL(f)});
+  q('[data-clogo]',el=>el.onchange=e=>leerLogo(e.target.files[0],u=>keep(()=>{CANALES[el.dataset.clogo].logo=u;CANALES[el.dataset.clogo].lt=1;AJ.msg='Logo actualizado en toda la plataforma.'})));
   q('[data-cldel]',b=>b.onclick=()=>k(()=>{CANALES[b.dataset.cldel].logo=null;AJ.msg='Logo retirado.'}));
   q('[data-ajbk]',b=>b.onclick=()=>bkJSON());
   q('[data-ajxls]',b=>b.onclick=()=>bkXLS());
@@ -2029,7 +2032,7 @@ async function iniciar(){
 async function entrar(session){
   L0.modo='cargando';renderLogin();DB.uid=session.user.id;DB.email=session.user.email;
   try{await cargar()}catch(e){L0.modo='entrar';L0.err={pass:'No se pudo leer la información ('+esc(e.message||e)+'). Verifique que el script de la base de datos se haya ejecutado.'};renderLogin();return}
-  S.auth=true;S.view='inicio';S.first=true;render();scrollTo(0,0);
+  S.auth=true;S.view='inicio';S.first=true;render();scrollTo(0,0);ajustarLogosGuardados();
   SB.rpc('exp_activar_envios',{p_url:CONN.url}).then(({error})=>{DB.envios=error?error.message:'ok'});
   avisosCargar();setInterval(()=>{if(document.visibilityState==='visible')avisosCargar()},120000)}
 async function logout(){await dbGuardar();await SB.auth.signOut();location.reload()}
@@ -2059,7 +2062,7 @@ const DB={uid:null,email:'',hash:{},t:null,enCurso:false,otra:false,envios:'',es
 const COL={cuentas:()=>CTA,empresas:()=>EMP,propuestas:()=>PROP,ventas:()=>VENTAS,iada:()=>IP,actividades:()=>ACT,comisiones:()=>COMO,
   metas:()=>({exp:ANUAL.exp.meta,uvm:ANUAL.uvm.meta,iada:ANUAL.iada.meta}),prosp:()=>PROSPM,ajustes:()=>CFG,
   catalogos:()=>({MOTIVOS,MEDIOS,TIPOS,MODS,ADIC,AREAS,FPAGO,CATS}),
-  canales:()=>({prosp:PROSP,ch:Object.fromEntries(Object.entries(CANALES).map(([k,c])=>[k,{k:c.k,logo:c.logo||null}]))})};
+  canales:()=>({prosp:PROSP,ch:Object.fromEntries(Object.entries(CANALES).map(([k,c])=>[k,{k:c.k,logo:c.logo||null,lt:c.lt||0}]))})};
 const llenarA=(arr,src)=>{arr.splice(0,arr.length,...(Array.isArray(src)?src:[]))};
 const llenarO=(o,src)=>{for(const k of Object.keys(o))delete o[k];Object.assign(o,src&&typeof src==='object'?src:{})};
 function aplicar(k,d){if(d==null)return;switch(k){
@@ -2069,7 +2072,7 @@ function aplicar(k,d){if(d==null)return;switch(k){
   case 'prosp':llenarO(PROSPM,d);for(const i in PROSPM)if(+i<=ULTIMO_H&&MES[i])MES[i].ge=PROSPM[i];break;
   case 'ajustes':Object.assign(CFG,d);break;
   case 'catalogos':for(const [n,arr] of [['MOTIVOS',MOTIVOS],['MEDIOS',MEDIOS],['TIPOS',TIPOS],['MODS',MODS],['ADIC',ADIC],['AREAS',AREAS],['FPAGO',FPAGO],['CATS',CATS]])if(Array.isArray(d[n])&&d[n].length)llenarA(arr,d[n]);break;
-  case 'canales':if(d.prosp)PROSP=d.prosp;for(const [c,v] of Object.entries(d.ch||{}))if(CANALES[c]){CANALES[c].k=v.k;CANALES[c].logo=v.logo||null;if(ORIG[c])ORIG[c].k=v.k}break}}
+  case 'canales':if(d.prosp)PROSP=d.prosp;for(const [c,v] of Object.entries(d.ch||{}))if(CANALES[c]){CANALES[c].k=v.k;CANALES[c].logo=v.logo||null;CANALES[c].lt=v.lt||0;if(ORIG[c])ORIG[c].k=v.k}break}}
 function recontar(){const mx=(arr,b)=>Math.max(b,...arr.map(Number).filter(Number.isFinite))+1;
   NID=mx([...CTA.map(c=>c.id),...Object.keys(EMP).map(k=>String(k).replace(/^e/,''))],99);PID=mx(PROP.map(p=>p.id),499);VID=mx(VENTAS.map(v=>v.id),899);AID=mx(ACT.map(a=>a.id),0);
   IAID=mx([...IP.map(p=>String(p.id).slice(1)),...IP.flatMap(p=>p.gens.map(g=>String(g.id).slice(1))),...IP.flatMap(p=>p.gens.flatMap(g=>g.al.map(a=>a.id)))],49)}
@@ -2152,6 +2155,24 @@ document.addEventListener('click',ev=>{
   const ee=ev.target.closest('[data-ede]');if(ee){const e=EMP[ee.dataset.ede];keep(()=>{C.form={t:'emp',id:ee.dataset.ede,v:{empn:e.n,empc:e.c}};C.err={}});return}
 },true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&CF.o){e.stopImmediatePropagation();CF.o=null;pintarCF()}},true);
+
+/* ================= LOGOS: recorte automático ================= */
+function procesarLogo(src,cb){const im=new Image();im.onload=()=>{
+  const W0=im.naturalWidth||im.width,H0=im.naturalHeight||im.height,k=Math.min(1,600/Math.max(W0,H0)),W=Math.max(1,Math.round(W0*k)),H=Math.max(1,Math.round(H0*k));
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.drawImage(im,0,0,W,H);
+  let d;try{d=x.getImageData(0,0,W,H).data}catch(e){cb(src);return}
+  const px=(i,j)=>{const o=(j*W+i)*4;return [d[o],d[o+1],d[o+2],d[o+3]]};
+  const esq=[px(0,0),px(W-1,0),px(0,H-1),px(W-1,H-1)],bg=esq[0],opaco=bg[3]>200;
+  const fondo=p=>p[3]<20||(opaco&&Math.abs(p[0]-bg[0])<24&&Math.abs(p[1]-bg[1])<24&&Math.abs(p[2]-bg[2])<24);
+  let x0=W,y0=H,x1=-1,y1=-1;for(let j=0;j<H;j++)for(let i=0;i<W;i++)if(!fondo(px(i,j))){if(i<x0)x0=i;if(i>x1)x1=i;if(j<y0)y0=j;if(j>y1)y1=j}
+  if(x1<0){x0=0;y0=0;x1=W-1;y1=H-1}
+  const w=x1-x0+1,h=y1-y0+1,lado=Math.round(Math.max(w,h)*(opaco?1:1.1)),Z=160,o=document.createElement('canvas');o.width=Z;o.height=Z;const ox=o.getContext('2d');
+  if(opaco){ox.fillStyle=`rgb(${bg[0]},${bg[1]},${bg[2]})`;ox.fillRect(0,0,Z,Z)}
+  const e=Z/lado;ox.drawImage(c,x0,y0,w,h,(Z-w*e)/2,(Z-h*e)/2,w*e,h*e);cb(o.toDataURL('image/png'))};im.onerror=()=>cb(src);im.src=src}
+function leerLogo(f,cb){if(!f)return;const r=new FileReader();r.onload=()=>procesarLogo(r.result,cb);r.readAsDataURL(f)}
+function ajustarLogosGuardados(){let n=0;const fin=()=>{if(--n===0)keep(()=>{})};
+  for(const e of Object.values(EMP))if(e.logo&&!e.lt){n++;procesarLogo(e.logo,u=>{e.logo=u;e.lt=1;fin()})}
+  for(const c of Object.values(CANALES))if(c.logo&&!c.lt){n++;procesarLogo(c.logo,u=>{c.logo=u;c.lt=1;fin()})}}
 const keep=f=>{const y=scrollY;f();render();scrollTo(0,y)};
 function render(){renderLogin();pintarAvisos();if(!S.auth)return;sincronizar();nav();$('#main').innerHTML=S.view==='dash'?dashboard():S.view==='cuentas'?cuentasView():S.view==='iada'?iadaView():S.view==='propuestas'?propuestasView():S.view==='ventas'?ventasView():S.view==='actividades'?actView():S.view==='inicio'?inicioView():S.view==='ajustes'?ajustesView():S.view==='comisiones'?comView():ph();if(S.view==='comisiones')bindCom();if(S.view==='ajustes')bindAjustes();if(S.view==='actividades')bindAct();if(S.view==='inicio')bindInicio();if(S.view==='propuestas')bindProp();if(S.view==='ventas')bindVentas();if(S.view==='cuentas')bindCuentas();if(S.view==='iada')bindIada();
   document.querySelectorAll('[data-modo]').forEach(b=>b.onclick=()=>keep(()=>{S.modo=b.dataset.modo;S.edit=false;if(S.modo==='tri')S.tri=Math.floor(S.mes/3)}));
