@@ -737,6 +737,10 @@ body.lg #avb{display:none}
 .lgh{margin:0;font-size:13px;color:#C9D4E8;line-height:1.5}.lgl{display:flex;align-items:center;justify-content:center;gap:10px;color:#C9D4E8;font-size:14px;padding:30px 0}
 .spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 .lgm.bad{color:#FFB4B6}.lgb[disabled]{opacity:.7;cursor:default}
+.cfw{z-index:95}.btn1.rojo{background:linear-gradient(140deg,#F06A6E,#C62F33);box-shadow:0 10px 24px -10px rgba(229,72,77,.8)}
+.lnk.dl{color:var(--bad)!important}.ti .lnk.dl{font-size:11.5px;margin-top:4px;padding:0}
+.igact{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px!important;font-size:12.5px}
+body:has(.dwb) #avb,body:has(.mdw) #avb{display:none}
 </style>
 </head>
 <body>
@@ -1051,7 +1055,7 @@ function empDrawer(){
     <div class="lc"><label class="lgup" title="Subir o cambiar logo">${logo(e,'elog lg')}<input type="file" accept="image/*" id="logoin" hidden><span class="lgt">${EMP[e].logo?'Cambiar':'Subir'} logo</span></label>
      <div><h3>${esc(EMP[e].n)}</h3><small>${st.cli?'Cliente':'Prospecto'} · ${[...new Set(st.xs.map(c=>ORIG[c.origen].n))].join(', ')}</small></div></div>
     <div class="eks"><div><small>Contactos</small><b>${st.xs.length}</b></div><div><small>Vendido</small><b>${st.tot?K(st.tot):'—'}</b></div><div><small>Propuestas abiertas</small><b>${st.abiertas.length}</b></div><div><small>Pendientes</small><b>${st.pend.length}</b></div></div></div>
-   <div class="dwa"><button class="btn1" data-new="1" data-emp="${e}">Agregar contacto</button><button class="btn2" id="logobtn">${EMP[e].logo?'Cambiar logo':'Subir logo de la empresa'}</button>${EMP[e].logo?'<button class="btn2 dang" id="logodel">Quitar logo</button>':''}</div>
+   <div class="dwa"><button class="btn1" data-new="1" data-emp="${e}">Agregar contacto</button><button class="btn2" id="logobtn">${EMP[e].logo?'Cambiar logo':'Subir logo de la empresa'}</button>${EMP[e].logo?'<button class="btn2 dang" id="logodel">Quitar logo</button>':''}<button class="btn2" data-ede="${e}">${icon('edit')} Editar empresa</button><button class="btn2 dang" data-del="emp|${e}">Eliminar empresa</button></div>
    <div class="dws"><h4>Pendientes de la empresa <em>${st.pend.length}</em></h4>${st.pend.length?st.pend.map(p=>`<div class="pr ${p.f<HOY?'venc':''}"><div><b>${esc(p.t)}</b><small>Con ${esc(p.c.nom)} ${esc(p.c.ape)} · ${fmtF(p.f)}${p.f<HOY?' · vencido':''}</small></div></div>`).join(''):'<p class="mut">Sin pendientes con esta empresa.</p>'}</div>
    <div class="dws"><h4>Contactos <em>${st.xs.length}</em></h4>${st.xs.map(c=>{const u=ult(c);return `<button class="pr ctr" data-open="${c.id}"><span class="lc">${avt(c)}<span><b>${esc(c.nom)} ${esc(c.ape)}</b><small>${esc(c.puesto)}${u?' · último seguimiento hace '+dias(u.f)+' días':''}</small></span></span>${fpill(c)}</button>`}).join('')}</div>
    <div class="dws"><h4>Propuestas <em>${st.props.length}</em></h4>${st.props.length?st.props.map(p=>`<div class="pr"><div><b>${esc(p.n)}</b><small>${p.f} · con ${esc(p.c.nom)} ${esc(p.c.ape)}</small></div><b>${m(p.m)}</b></div>`).join(''):'<p class="mut">Sin propuestas.</p>'}</div>
@@ -1065,19 +1069,19 @@ function drawer(){
     <div class="lc">${avt(c).replace('av2','av2 lg')}<div><h3>${esc(c.nom)} ${esc(c.ape)}</h3><small>${esc(c.puesto)} · ${esc(EMP[c.emp].n)}</small></div></div>
     <div class="dwt">${opill(c.origen)}${fpill(c)}${c.tipo==='Cliente'&&c.desde?`<span class="fp" style="--k:#4B5B76">Cliente desde ${fmtF(c.desde)}</span>`:''}</div></div>
    <div class="dwa"><button class="btn1" data-seg="${c.id}">Registrar seguimiento</button><button class="btn2" disabled title="Se define en Propuestas activas">Nueva propuesta</button><button class="btn2" data-pen="${c.id}">Pendiente</button>
-    ${c.estado==='Descartado'?`<button class="btn2" data-react="${c.id}">Reactivar</button>`:`<button class="btn2 dang" data-desc="${c.id}">Descartar</button>`}</div>
+    ${c.estado==='Descartado'?`<button class="btn2" data-react="${c.id}">Reactivar</button>`:`<button class="btn2 dang" data-desc="${c.id}">Descartar</button>`}<button class="btn2" data-edc="${c.id}">${icon('edit')} Editar</button><button class="btn2 dang" data-del="cta|${c.id}">Eliminar</button></div>
    ${c.estado==='Descartado'?`<div class="dnote">Descartado · ${esc(c.motivo)}</div>`:''}
    <div class="dws"><h4>Datos de contacto</h4><dl class="dd"><div><dt>Correo</dt><dd>${esc(c.correo)||'—'}</dd></div><div><dt>Teléfono</dt><dd>${esc(c.tel)||'—'}</dd></div><div><dt>Tipo</dt><dd>${c.tipo}</dd></div><div><dt>Canal</dt><dd>${ORIG[c.origen].n}</dd></div></dl></div>
    ${c.tipo==='Prospecto'?`<div class="dws"><h4>Fase de prospección</h4><div class="stp">${FASES.map((f,i)=>`<span class="${i<=c.fase?'on':''}" style="--k:${FCOL[i]}" title="${f}"></span>`).join('')}</div><small class="stl">${FASES[c.fase]} · paso ${c.fase+1} de ${FASES.length}</small></div>`:''}
    <div class="dws"><h4>Propuestas <em>${propsOf(c).length}</em></h4>${propsOf(c).length?propsOf(c).map(p=>`<div class="pr"><div><b>${esc(p.n)}</b><small>${p.f}</small></div><b>${m(p.m)}</b></div>`).join(''):'<p class="mut">Sin propuestas. Se crean desde Propuestas activas y aparecen aquí.</p>'}</div>
    <div class="dws"><h4>Pendientes <em>${pendOf(c).length}</em></h4>${pendOf(c).length?pendOf(c).map(p=>`<div class="pr"><div><b>${esc(p.t)}</b><small>${fmtF(p.f)}</small></div></div>`).join(''):'<p class="mut">Sin pendientes.</p>'}</div>
-   <div class="dws"><h4>Seguimientos <em>${c.segs.length}</em></h4><div class="tl">${c.segs.map(s=>`<div class="ti"><i></i><div><b>${fmtF(s.f)} · ${s.medio}</b><small>${c.tipo==='Prospecto'?FASES[s.fase]:''}</small><p>${esc(s.nota)}</p></div></div>`).join('')||'<p class="mut">Sin seguimientos.</p>'}</div></div>
+   <div class="dws"><h4>Seguimientos <em>${c.segs.length}</em></h4><div class="tl">${c.segs.map((s,si)=>`<div class="ti"><i></i><div><b>${fmtF(s.f)} · ${s.medio}</b><small>${c.tipo==='Prospecto'?FASES[s.fase]:''}</small><p>${esc(s.nota)}</p><button class="lnk dl" data-del="seg|${c.id}|${si}">Eliminar seguimiento</button></div></div>`).join('')||'<p class="mut">Sin seguimientos.</p>'}</div></div>
   </aside></div>`;
 }
 function fld(id,lab,inner,req){return `<label class="fl2 ${C.err[id]?'bad':''}"><span>${lab}${req?' <i>*</i>':''}</span>${inner}${C.err[id]?`<small class="er">${C.err[id]}</small>`:''}</label>`}
 function forma(){
   const F=C.form;if(!F)return '';const v=k=>esc(F.v[k]||'');
-  if(F.t==='nueva') return `<div class="mdw" id="fmw"><div class="md wide" role="dialog" aria-modal="true" aria-labelledby="fmt"><h3 id="fmt">Nueva cuenta</h3><p>Los campos con asterisco son obligatorios.</p>
+  if(F.t==='nueva'||F.t==='editc') return `<div class="mdw" id="fmw"><div class="md wide" role="dialog" aria-modal="true" aria-labelledby="fmt"><h3 id="fmt">${F.t==='editc'?'Editar contacto':'Nueva cuenta'}</h3><p>Los campos con asterisco son obligatorios.</p>
    <div class="fg">${fld('nom','Nombre',`<input data-f="nom" value="${v('nom')}">`,1)}${fld('ape','Apellido',`<input data-f="ape" value="${v('ape')}">`,1)}
     ${fld('puesto','Puesto',`<input data-f="puesto" value="${v('puesto')}">`)}
     ${fld('emp','Empresa',`<select data-f="emp"><option value="">Seleccione una empresa</option>${Object.entries(EMP).sort((a,b)=>a[1].n.localeCompare(b[1].n)).map(([k,e])=>`<option value="${k}" ${F.v.emp===k?'selected':''}>${esc(e.n)}</option>`).join('')}<option value="__n" ${F.v.emp==='__n'?'selected':''}>+ Registrar empresa nueva</option></select>`,1)}
@@ -1085,7 +1089,10 @@ function forma(){
     ${fld('correo','Correo',`<input type="email" data-f="correo" value="${v('correo')}" placeholder="nombre@empresa.com">`)}${fld('tel','Teléfono',`<input data-f="tel" value="${v('tel')}">`)}
     ${fld('origen','Canal',`<select data-f="origen"><option value="">Seleccione un canal</option>${['exp','uvm'].map(k=>`<option value="${k}" ${F.v.origen===k?'selected':''}>${ORIG[k].n}</option>`).join('')}</select>`,1)}
     ${fld('fase','Fase de prospección',`<select data-f="fase">${FALTA.map((f,i)=>`<option value="${i}" ${String(F.v.fase)===String(i)?'selected':''}>${f}</option>`).join('')}</select>`,1)}</div>
-   <div class="edact"><button class="btn2" data-fx="1">Cancelar</button><button class="btn1" id="fok">Guardar cuenta</button></div></div></div>`;
+   <div class="edact"><button class="btn2" data-fx="1">Cancelar</button><button class="btn1" id="fok">${F.t==='editc'?'Guardar cambios':'Guardar cuenta'}</button></div></div></div>`;
+  if(F.t==='emp') return `<div class="mdw" id="fmw"><div class="md" role="dialog" aria-modal="true" aria-labelledby="fmt"><h3 id="fmt">Editar empresa</h3><p>El cambio se refleja en todos sus contactos, propuestas y ventas.</p>
+   <div class="fg one">${fld('empn','Nombre de la empresa',`<input data-f="empn" value="${v('empn')}">`,1)}${fld('empc','Color de la empresa',`<input type="color" data-f="empc" value="${F.v.empc||'#3D7BFF'}">`)}</div>
+   <div class="edact"><button class="btn2" data-fx="1">Cancelar</button><button class="btn1" id="fok">Guardar cambios</button></div></div></div>`;
   const c=CTA.find(x=>x.id===F.id);
   if(F.t==='seg') return `<div class="mdw" id="fmw"><div class="md" role="dialog" aria-modal="true" aria-labelledby="fmt"><h3 id="fmt">Registrar seguimiento</h3><p>${esc(c.nom)} ${esc(c.ape)} · ${esc(EMP[c.emp].n)}</p>
    <div class="fg one">${fld('f','Fecha',`<input type="date" data-f="f" value="${F.v.f||HOY}">`,1)}${fld('medio','Medio',`<select data-f="medio">${MEDIOS.map(x=>`<option ${F.v.medio===x?'selected':''}>${x}</option>`).join('')}</select>`,1)}
@@ -1109,6 +1116,16 @@ function cuentasView(){
 }
 function guardar(){
   const F=C.form,v=F.v,e={};
+  if(F.t==='emp'){if(!(v.empn||'').trim())e.empn='Escriba el nombre de la empresa.';C.err=e;if(Object.keys(e).length)return false;EMP[F.id].n=v.empn.trim();EMP[F.id].c=v.empc||EMP[F.id].c;return true}
+  if(F.t==='editc'){
+    if(!(v.nom||'').trim())e.nom='Escriba el nombre.';if(!(v.ape||'').trim())e.ape='Escriba el apellido.';
+    if(!v.emp)e.emp='Seleccione una empresa.';if(v.emp==='__n'&&!(v.empn||'').trim())e.empn='Escriba el nombre de la empresa.';
+    if(!v.origen)e.origen='Seleccione el canal.';if(v.correo&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.correo))e.correo='Revise el formato del correo.';
+    C.err=e;if(Object.keys(e).length)return false;
+    let emp=v.emp;if(emp==='__n'){emp='e'+(NID++);EMP[emp]={n:v.empn.trim(),c:v.empc||'#3D7BFF',logo:v.empl||null}}
+    const c=CTA.find(x=>x.id===F.id),cli=Number(v.fase||0)===6;
+    Object.assign(c,{nom:v.nom.trim(),ape:v.ape.trim(),puesto:(v.puesto||'').trim(),emp,correo:v.correo||'',tel:v.tel||'',origen:v.origen,tipo:cli?'Cliente':'Prospecto',fase:cli?6:Number(v.fase||0),desde:cli?(c.desde||HOY):null});
+    return true}
   if(F.t==='nueva'){
     if(!(v.nom||'').trim())e.nom='Escriba el nombre.';if(!(v.ape||'').trim())e.ape='Escriba el apellido.';
     if(!v.emp)e.emp='Seleccione una empresa.';if(v.emp==='__n'&&!(v.empn||'').trim())e.empn='Escriba el nombre de la empresa.';
@@ -1190,7 +1207,7 @@ function iadaView(){
      ${p.gens.map(g=>{const ven=g.al.filter(a=>vencidos(a).length&&pagado(a)<a.total).length;return `<button class="igen ${g.id===G.id?'on':''}" data-igen="${p.id}|${g.id}"><span>${esc(g.n)}<small>${fmtF(g.ini)} – ${fmtF(g.fin)}</small></span><em>${g.al.length}</em>${ven?`<i title="${ven} con pago vencido"></i>`:''}</button>`}).join('')}
      <button class="iadd" data-inew="gen" data-ip="${p.id}">+ Nueva generación</button></div>`).join('')}</aside>
     <div class="imain">
-     <article class="card igh"><div><small>${esc(P.n)}</small><h3>${esc(G.n)}</h3><p>${fmtF(G.ini)} al ${fmtF(G.fin)} · ${G.al.length} alumnos</p><p class="cvg">Cierre del periodo de venta: <b>${G.cierre?fmtF(G.cierre)+' '+G.cierre.slice(0,4):'sin definir'}</b> · mínimo de inscripciones <b>${G.min?G.min+' (lleva '+G.al.length+')':'sin definir'}</b>${G.cierre?` · ${G.cierre<=HOY?(G.al.length>=(G.min||0)?'<span class="okt">comisión habilitada</span>':'<span class="bdt">no alcanzó el mínimo</span>'):'comisión al cierre'}`:''} <button class="lnk" data-igcv="1">Editar</button></p></div>
+     <article class="card igh"><div><small>${esc(P.n)}</small><h3>${esc(G.n)}</h3><p>${fmtF(G.ini)} al ${fmtF(G.fin)} · ${G.al.length} alumnos</p><p class="cvg">Cierre del periodo de venta: <b>${G.cierre?fmtF(G.cierre)+' '+G.cierre.slice(0,4):'sin definir'}</b> · mínimo de inscripciones <b>${G.min?G.min+' (lleva '+G.al.length+')':'sin definir'}</b>${G.cierre?` · ${G.cierre<=HOY?(G.al.length>=(G.min||0)?'<span class="okt">comisión habilitada</span>':'<span class="bdt">no alcanzó el mínimo</span>'):'comisión al cierre'}`:''} <button class="lnk" data-igcv="1">Editar</button></p><p class="igact"><button class="lnk" data-igedit="1">${icon('edit')} Editar programa y generación</button><button class="lnk dl" data-del="gen|${P.id}|${G.id}">Eliminar generación</button><button class="lnk dl" data-del="prog|${P.id}">Eliminar programa</button></p></div>
       <div class="igk"><div><small>Venta de la generación</small><b>${m(gt)}</b></div><div><small>Cobrado</small><b>${m(gp)}</b></div><div><small>Por cobrar</small><b>${m(gt-gp)}</b></div></div>
       <div class="igp"><div class="bt"><div class="f ok" style="width:${pct(gp,gt)||0}%"></div></div><small>${pct(gp,gt)||0}% cobrado</small></div>
       <div class="iga"><button class="btn2" data-irep="1">${icon('dl')} Descargar reporte de la generación</button></div></article>
@@ -1224,7 +1241,7 @@ function iDrawer(){
    <div class="dwh"><button class="dwx" id="iwx" aria-label="Cerrar">×</button><div class="lc"><span class="av2 lg" style="background:#F08A24">${a.n.split(' ').map(w=>w[0]).slice(0,2).join('')}</span><div><h3>${esc(a.n)}</h3><small>${esc(p.n)} · ${esc(g.n)}</small></div></div>
     <div class="dwt"><span class="fp" style="--k:${st[1]}">${st[0]}</span></div>
     <div class="eks"><div><small>Total</small><b>${K(a.total)}</b></div><div><small>Pagado</small><b>${K(pg)}</b></div><div><small>Por pagar</small><b>${K(a.total-pg)}</b></div><div><small>Pagos</small><b>${a.pagos.filter(p=>p[2]).length}/${a.pagos.length}</b></div></div></div>
-   <div class="dwa">${pg<a.total?`<button class="btn1" data-ipay="${a.id}">Registrar pago</button>`:''}<button class="btn2" data-iacu="${a.id}">${a.acuerdo?'Editar acuerdo':'Registrar acuerdo'}</button><button class="btn2" data-iedit="${a.id}">${icon('edit')} Editar alumno y pagos</button></div>
+   <div class="dwa">${pg<a.total?`<button class="btn1" data-ipay="${a.id}">Registrar pago</button>`:''}<button class="btn2" data-iacu="${a.id}">${a.acuerdo?'Editar acuerdo':'Registrar acuerdo'}</button><button class="btn2" data-iedit="${a.id}">${icon('edit')} Editar alumno y pagos</button><button class="btn2 dang" data-del="al|${a.id}">Eliminar alumno</button></div>
    ${a.acuerdo?`<div class="dws"><h4>Acuerdo de pago</h4><div class="acu"><b>${esc(a.acuerdo.t)}</b><small>Fecha compromiso: ${fmtF(a.acuerdo.f)}${a.acuerdo.f<HOY?' · vencido':''}</small></div></div>`:''}
    <div class="dws"><h4>Datos del alumno</h4><dl class="dd"><div><dt>Correo</dt><dd>${esc(a.correo)||'—'}</dd></div><div><dt>Teléfono</dt><dd>${esc(a.tel)||'—'}</dd></div><div><dt>Forma de pago</dt><dd>${esc(a.forma||'—')}</dd></div><div><dt>Requiere factura</dt><dd>${a.factura?'Sí':'No'}</dd></div></dl></div>
    <div class="dws"><h4>Calendario de pagos <em>${a.pagos.length}</em></h4>${a.pagos.map((p,i)=>{const ven=!p[2]&&p[1]<HOY;return `<div class="pr ${ven?'venc':''}"><div><b>Pago ${i+1} · ${m(p[0])}</b><small>${fmtF(p[1])}${ven?' · vencido':''}</small></div><span class="fp" style="--k:${p[2]?'#1F9D68':ven?'#E5484D':'#8593AB'}">${p[2]?'Pagado':ven?'Vencido':'Pendiente'}</span></div>`}).join('')}</div>
@@ -1233,6 +1250,7 @@ function iDrawer(){
 function iForma(){
   const F=I.form;if(!F)return '';const v=k=>esc(F.v[k]||''),fl=(id,l,inn,r)=>`<label class="fl2 ${I.err[id]?'bad':''}"><span>${l}${r?' <i>*</i>':''}</span>${inn}${I.err[id]?`<small class="er">${I.err[id]}</small>`:''}</label>`;
   const wrap=(t,sub,body,btn)=>`<div class="mdw" id="ifw"><div class="md wide" role="dialog" aria-modal="true" aria-labelledby="ift"><h3 id="ift">${t}</h3><p>${sub}</p><div class="fg">${body}</div><div class="edact"><button class="btn2" data-ifx="1">Cancelar</button><button class="btn1" id="ifok">${btn}</button></div></div></div>`;
+  if(F.t==='gedit')return wrap('Editar programa y generación','Corrija los datos del programa y de la generación seleccionada.',fl('n','Nombre del programa',`<input data-i="n" value="${v('n')}">`,1)+fl('mod','Modalidad',`<select data-i="mod">${['Presencial','Online sincrónico','Online asincrónico','Híbrido'].map(x=>`<option ${F.v.mod===x?'selected':''}>${x}</option>`).join('')}</select>`,1)+fl('gn','Nombre de la generación',`<input data-i="gn" value="${v('gn')}">`,1)+fl('ini','Fecha de inicio',`<input type="date" data-i="ini" value="${v('ini')}">`,1)+fl('fin','Fecha de término',`<input type="date" data-i="fin" value="${v('fin')}">`,1)+fl('cierre','Cierre del periodo de venta',`<input type="date" data-i="cierre" value="${v('cierre')}">`,1)+fl('min','Mínimo de inscripciones',`<input type="number" min="1" step="1" data-i="min" value="${v('min')}">`,1),'Guardar cambios');
   if(F.t==='prog')return wrap('Nuevo programa','Se crea con su primera generación.',fl('n','Nombre del programa',`<input data-i="n" value="${v('n')}">`,1)+fl('mod','Modalidad',`<select data-i="mod">${['Presencial','Online sincrónico','Online asincrónico','Híbrido'].map(x=>`<option ${F.v.mod===x?'selected':''}>${x}</option>`).join('')}</select>`,1)+fl('gn','Nombre de la generación',`<input data-i="gn" value="${v('gn')||'Generación 1'}">`,1)+fl('ini','Fecha de inicio',`<input type="date" data-i="ini" value="${v('ini')}">`,1)+fl('fin','Fecha de término',`<input type="date" data-i="fin" value="${v('fin')}">`,1)+fl('cierre','Cierre del periodo de venta',`<input type="date" data-i="cierre" value="${v('cierre')}">`,1)+fl('min','Mínimo de inscripciones',`<input type="number" min="1" step="1" data-i="min" value="${v('min')}">`,1),'Guardar programa');
   if(F.t==='gen')return wrap('Nueva generación',esc(IP.find(p=>p.id===F.p).n),fl('gn','Nombre de la generación',`<input data-i="gn" value="${v('gn')}">`,1)+fl('ini','Fecha de inicio',`<input type="date" data-i="ini" value="${v('ini')}">`,1)+fl('fin','Fecha de término',`<input type="date" data-i="fin" value="${v('fin')}">`,1)+fl('cierre','Cierre del periodo de venta',`<input type="date" data-i="cierre" value="${v('cierre')}">`,1)+fl('min','Mínimo de inscripciones',`<input type="number" min="1" step="1" data-i="min" value="${v('min')}">`,1),'Guardar generación');
   if(F.t==='gcv')return wrap('Periodo de venta','Al cierre, si se alcanzó el mínimo de inscripciones, se habilita su comisión de IADA.',fl('cierre','Cierre del periodo de venta',`<input type="date" data-i="cierre" value="${v('cierre')}">`,1)+fl('min','Mínimo de inscripciones',`<input type="number" min="1" step="1" data-i="min" value="${v('min')}">`,1),'Guardar');
@@ -1260,6 +1278,9 @@ function iForma(){
 }
 function iGuardar(){
   const F=I.form,v=F.v,e={},req=(k,msg)=>{if(!String(v[k]??'').trim())e[k]=msg};
+  if(F.t==='gedit'){req('n','Escriba el nombre del programa.');req('gn','Escriba el nombre de la generación.');req('ini','Elija la fecha de inicio.');req('fin','Elija la fecha de término.');req('cierre','Elija el cierre del periodo de venta.');
+    if(v.ini&&v.fin&&v.fin<v.ini)e.fin='La fecha de término debe ser posterior al inicio.';if(!/^\d+$/.test(String(v.min??''))||Number(v.min)<1)e.min='Escriba un número entero de inscripciones, de 1 en adelante.';I.err=e;if(Object.keys(e).length)return false;
+    const P=IP.find(p=>p.id===I.prog),G=P.gens.find(g=>g.id===I.gen);P.n=v.n.trim();P.mod=v.mod||P.mod;Object.assign(G,{n:v.gn.trim(),ini:v.ini,fin:v.fin,cierre:v.cierre,min:Number(v.min)});return true}
   if(F.t==='prog'){req('n','Escriba el nombre del programa.');req('gn','Escriba el nombre de la generación.');req('ini','Elija la fecha de inicio.');req('fin','Elija la fecha de término.');if(v.ini&&v.fin&&v.fin<v.ini)e.fin='La fecha de término debe ser posterior al inicio.';req('cierre','Elija el cierre del periodo de venta.');if(!/^\d+$/.test(String(v.min??''))||Number(v.min)<1)e.min='Escriba un número entero de inscripciones, de 1 en adelante.';I.err=e;if(Object.keys(e).length)return false;
     const pid='p'+(IAID++),gid='g'+(IAID++);IP.push({id:pid,n:v.n.trim(),mod:v.mod||'Presencial',gens:[{id:gid,n:v.gn.trim(),ini:v.ini,fin:v.fin,cierre:v.cierre,min:Number(v.min),fc:{pI:50,pE:50,egr:[]},al:[]}]});I.prog=pid;I.gen=gid;return true}
   if(F.t==='gcv'){req('cierre','Elija la fecha de cierre.');if(!/^\d+$/.test(String(v.min))||Number(v.min)<1)e.min='Escriba un número entero de inscripciones, de 1 en adelante.';I.err=e;if(Object.keys(e).length)return false;const G=IP.find(p=>p.id===I.prog).gens.find(g=>g.id===I.gen);G.cierre=v.cierre;G.min=Number(v.min);return true}
@@ -1288,6 +1309,7 @@ function bindIada(){
   q('[data-ial]',b=>b.onclick=()=>k(()=>I.open=+b.dataset.ial));
   const x=$('#iwx');if(x)x.onclick=()=>k(()=>I.open=null);const wb=$('#iwb');if(wb)wb.onclick=e=>{if(e.target===wb)k(()=>I.open=null)};
   q('[data-inew]',b=>b.onclick=()=>k(()=>{I.form={t:b.dataset.inew,p:b.dataset.ip,v:b.dataset.inew==='prog'?{mod:'Presencial',gn:'Generación 1'}:{np:1,forma:FPAGO[0],factura:'no',rows:[]}};I.err={}}));
+  q('[data-igedit]',b=>b.onclick=()=>k(()=>{const P=IP.find(p=>p.id===I.prog),G=P.gens.find(g=>g.id===I.gen);I.form={t:'gedit',v:{n:P.n,mod:P.mod,gn:G.n,ini:G.ini,fin:G.fin,cierre:G.cierre||'',min:G.min??''}};I.err={}}));
   q('[data-igcv]',b=>b.onclick=()=>k(()=>{const G=IP.find(p=>p.id===I.prog).gens.find(g=>g.id===I.gen);I.form={t:'gcv',v:{cierre:G.cierre||'',min:G.min??''}};I.err={}}));
   q('[data-ipay]',b=>b.onclick=()=>k(()=>{I.form={t:'pay',id:+b.dataset.ipay,v:{fr:HOY}};I.err={}}));
   q('[data-iacu]',b=>b.onclick=()=>k(()=>{const a=allAl().find(z=>z.a.id===+b.dataset.iacu).a;I.form={t:'acu',id:a.id,v:a.acuerdo?{...a.acuerdo}:{}};I.err={}}));
@@ -1351,7 +1373,7 @@ function pDrawer(){
    <div class="dwh"><button class="dwx" id="pwx" aria-label="Cerrar">×</button><small>${esc(EMP[c.emp].n)} · ${esc(c.nom)} ${esc(c.ape)}</small><h3 style="margin-top:4px">${esc(p.n)}</h3>
     <div class="dwt">${opill(c.origen)}${pFase(p.f)}<span class="fp" style="--k:#4B5B76">${p.tipo}</span></div>
     <div class="eks"><div><small>Inversión con IVA</small><b>${p.m?K(p.m):'Pendiente'}</b></div><div><small>Sin IVA</small><b>${p.m?K(p.m/1.16):'—'}</b></div><div><small>Duración</small><b>${p.dur||'—'} h</b></div><div><small>Enviada</small><b>${fmtF(p.fecha)}</b></div></div></div>
-   <div class="dwa">${act?`<button class="btn1" data-pfase="${p.id}">Registrar avance</button><button class="btn2" data-pwin="${p.id}" ${p.m?'':'disabled title="Capture la inversión antes de marcarla como venta"'}>Marcar como venta</button><button class="btn2 dang" data-pdes="${p.id}">Descartar</button>`:''}<button class="btn2" data-pedit="${p.id}">${icon('edit')} Editar</button><button class="btn2" data-open="${c.id}" data-goc="1">Ver contacto</button></div>
+   <div class="dwa">${act?`<button class="btn1" data-pfase="${p.id}">Registrar avance</button><button class="btn2" data-pwin="${p.id}" ${p.m?'':'disabled title="Capture la inversión antes de marcarla como venta"'}>Marcar como venta</button><button class="btn2 dang" data-pdes="${p.id}">Descartar</button>`:''}<button class="btn2" data-pedit="${p.id}">${icon('edit')} Editar</button><button class="btn2 dang" data-del="prop|${p.id}">Eliminar</button><button class="btn2" data-open="${c.id}" data-goc="1">Ver contacto</button></div>
    ${!p.m&&act?`<div class="dnote" style="background:#FFF4D6;color:#8A5A00">Inversión pendiente: capture el monto para poder convertirla en venta.</div>`:''}
    ${p.f==='Descartada'?`<div class="dnote">Descartada · ${esc(p.motivo||'')}</div>`:''}
    ${act?`<div class="dws"><h4>Fase comercial</h4><div class="stp s4">${FCOM.map((f,i)=>`<span class="${i<=FCOM.indexOf(p.f)?'on':''}" style="--k:${FCCOL[p.f]}" title="${f}"></span>`).join('')}</div><small class="stl">${p.f} · paso ${FCOM.indexOf(p.f)+1} de ${FCOM.length}</small></div>`:''}
@@ -1484,7 +1506,7 @@ function vDrawer(){
    <div class="dwh"><button class="dwx" id="vwx" aria-label="Cerrar">×</button><small>${esc(EMP[c.emp].n)} · ${esc(c.nom)} ${esc(c.ape)}</small><h3 style="margin-top:4px">${esc(pr.n)}</h3>
     <div class="dwt">${opill(c.origen)}<span class="fp" style="--k:${st[1]}">${st[0]}</span>${v.uvmN?`<span class="fp" style="--k:#4B5B76">UVM: ${esc(v.uvmN)}</span>`:''}</div>
     <div class="eks"><div><small>Total con IVA</small><b>${K(t)}</b></div><div><small>Cobrado</small><b>${K(cb)}</b></div><div><small>Por cobrar</small><b>${K(t-cb)}</b></div><div><small>Próximo pago</small><b>${px?fmtF(px.f):'—'}</b></div></div></div>
-   <div class="dwa">${v.pagos.length?`<button class="btn2" data-vmod="${v.id}">${icon('edit')} Modificar venta</button>`:`<button class="btn1" data-vcal="${v.id}">Capturar calendario de pagos</button>`}<button class="btn2" data-vseg="${v.id}">Agregar seguimiento</button>${U?`<button class="btn2" data-vuvm="${v.id}">Nombre UVM</button>`:''}</div>
+   <div class="dwa">${v.pagos.length?`<button class="btn2" data-vmod="${v.id}">${icon('edit')} Modificar venta</button>`:`<button class="btn1" data-vcal="${v.id}">Capturar calendario de pagos</button>`}<button class="btn2" data-vseg="${v.id}">Agregar seguimiento</button><button class="btn2 dang" data-del="venta|${v.id}">Eliminar venta</button>${U?`<button class="btn2" data-vuvm="${v.id}">Nombre UVM</button>`:''}</div>
    <div class="dws"><h4>Datos de la venta</h4><dl class="dd"><div><dt>Programa</dt><dd>${esc(pr.n)}</dd></div><div><dt>Cliente</dt><dd>${esc(EMP[c.emp].n)}</dd></div><div><dt>Fecha de venta</dt><dd>${fmtF(v.fv)} 2026</dd></div><div><dt>Total a cobrar</dt><dd>${m(t)}</dd></div></dl></div>
    <div class="dws"><h4>Calendario de pagos <em>${v.pagos.length}</em></h4>${v.pagos.length?v.pagos.map((p,i)=>{const e=estP(v,p),sub=p.m/1.16;return `<div class="vp ${vencP(p)?'venc':''}">
      <div class="vph"><div><b>Pago ${i+1} · ${m(p.m)}</b><small>${fmtF(p.f)} · subtotal ${m(sub)} · IVA ${m(p.m-sub)}</small></div><span class="fp" style="--k:${e[1]}">${e[0]}</span></div>
@@ -1636,7 +1658,7 @@ function aDrawer(){const a=ACT.find(x=>x.id===A.open);if(!a)return '';const w=cu
   return `<div class="dwb" id="awb"><aside class="dw" role="dialog" aria-modal="true" aria-label="${esc(a.t)}">
    <div class="dwh"><button class="dwx" id="awx" aria-label="Cerrar">×</button><small>${a.tipo} · ${a.asoc==='cuenta'?'Cuenta especial':a.asoc==='area'?'Área Exponencial':'Joaquín Bárcenas'}</small><h3 style="margin-top:4px">${esc(a.t)}</h3>
     <div class="dwt"><span class="fp" style="--k:${ECOL[a.est]}">${a.est}</span><span class="fp" style="--k:${w[1]==='late'?'#E5484D':'#4B5B76'}">${w[0]}</span></div></div>
-   <div class="dwa">${EACT.filter(x=>x!==a.est).map(x=>`<button class="btn2" data-aset="${a.id}|${x}">${x==='Terminado'?'Marcar como terminada':'Pasar a '+x.toLowerCase()}</button>`).join('')}<button class="btn2" data-aedit="${a.id}">${icon('edit')} Editar</button></div>
+   <div class="dwa">${EACT.filter(x=>x!==a.est).map(x=>`<button class="btn2" data-aset="${a.id}|${x}">${x==='Terminado'?'Marcar como terminada':'Pasar a '+x.toLowerCase()}</button>`).join('')}<button class="btn2" data-aedit="${a.id}">${icon('edit')} Editar</button><button class="btn2 dang" data-del="act|${a.id}">Eliminar</button></div>
    ${r?`<div class="dnote" style="background:#F1ECFF;color:#5B3FD0">${r<=HOY?'Hoy toca dar seguimiento: la actividad está en revisión desde el '+fmtF(a.rev)+'.':'Próximo recordatorio: '+fmtF(r)+' a las 9:00 a. m.'} Se notifica ${frecA(a)} al celular y al correo mientras siga en revisión.</div>`:''}
    <div class="dws"><h4>Asociado a</h4>${asocLbl(a)}${a.asoc==='cuenta'?`<button class="lnk" style="display:block;margin-top:8px" data-gocta="${a.ref}">Ver ficha de la cuenta</button>`:''}</div>
    <div class="dws"><h4>Detalle</h4><dl class="dd"><div><dt>Tipo</dt><dd>${a.tipo}</dd></div><div><dt>Fecha límite</dt><dd>${fmtL(a.lim)}</dd></div></dl>${a.notas?`<p style="margin:10px 0 0;font-size:13.5px;color:var(--ink2)">${esc(a.notas)}</p>`:''}</div>
@@ -2089,6 +2111,47 @@ async function correoAhora(body,el){if(el){el.hidden=false;el.textContent='Envia
   const {data,error}=await SB.functions.invoke('exp-avisos',{body});let msg;
   if(error){let d='';try{d=(await error.context.json()).error}catch(_){}msg='No se pudo enviar: '+(d||error.message)}else msg='Enviado a '+(data&&data.para||CFG.correo)+'.';
   if(el)el.textContent=msg;else toast(msg);return !error}
+
+/* ================= EDITAR Y ELIMINAR ================= */
+const CF={o:null};
+function confirmar(titulo,texto,boton,fn){CF.o={titulo,texto,boton,fn};pintarCF()}
+const bloqueo=(titulo,texto)=>confirmar(titulo,texto,null,null);
+function pintarCF(){let el=$('#cfw');if(!el){el=document.createElement('div');el.id='cfw';document.body.appendChild(el)}
+  if(!CF.o){el.innerHTML='';return}const o=CF.o;
+  el.innerHTML=`<div class="mdw cfw"><div class="md" role="alertdialog" aria-modal="true" aria-labelledby="cft" aria-describedby="cfd"><h3 id="cft">${o.titulo}</h3><p id="cfd">${o.texto}</p><div class="edact">${o.fn?'<button class="btn2" id="cfno">Cancelar</button><button class="btn1 rojo" id="cfsi">'+o.boton+'</button>':'<button class="btn1" id="cfno">Entendido</button>'}</div></div></div>`;
+  $('#cfno').onclick=()=>{CF.o=null;pintarCF()};$('#cfno').focus();
+  const si=$('#cfsi');if(si)si.onclick=()=>{const f=o.fn;CF.o=null;pintarCF();keep(f)}}
+const nomC=c=>esc(c.nom+' '+c.ape);
+function eliminar(t,a,b){
+  if(t==='cta'){const c=CTA.find(x=>x.id===+a);if(!c)return;const np=PROP.filter(p=>p.cid===c.id).length;
+    if(np)return bloqueo('No se puede eliminar todavía',`${nomC(c)} tiene ${np} ${np===1?'propuesta registrada':'propuestas registradas'}. Elimínelas primero en Propuestas o, si solo hay un dato equivocado, use Editar.`);
+    const na=ACT.filter(x=>x.asoc==='cuenta'&&x.ref===c.id).length;
+    return confirmar('Eliminar contacto',`Se eliminará a ${nomC(c)} con ${c.segs.length} ${c.segs.length===1?'seguimiento':'seguimientos'}${na?` y ${na} ${na===1?'actividad':'actividades'}`:''}. Esta acción no se puede deshacer.`,'Eliminar contacto',()=>{CTA.splice(CTA.indexOf(c),1);for(let i=ACT.length-1;i>=0;i--)if(ACT[i].asoc==='cuenta'&&ACT[i].ref===c.id)ACT.splice(i,1);C.open=null})}
+  if(t==='seg'){const c=CTA.find(x=>x.id===+a),sg=c&&c.segs[+b];if(!sg)return;
+    return confirmar('Eliminar seguimiento',`Se eliminará el seguimiento del ${fmtF(sg.f)} con ${nomC(c)}.`,'Eliminar',()=>{c.segs.splice(+b,1)})}
+  if(t==='emp'){const e=EMP[a];if(!e)return;const n=CTA.filter(c=>c.emp===a).length;
+    if(n)return bloqueo('No se puede eliminar todavía',`${esc(e.n)} tiene ${n} ${n===1?'contacto':'contactos'}. Elimínelos o cámbielos de empresa primero; si solo hay un dato equivocado, use Editar empresa.`);
+    return confirmar('Eliminar empresa',`Se eliminará ${esc(e.n)}.`,'Eliminar empresa',()=>{delete EMP[a];C.openEmp=null})}
+  if(t==='prop'){const p=PROP.find(x=>x.id===+a);if(!p)return;
+    if(VENTAS.some(v=>v.pid===p.id))return bloqueo('No se puede eliminar todavía',`La propuesta ${esc(p.n)} ya tiene una venta registrada. Elimine primero la venta en Ventas.`);
+    return confirmar('Eliminar propuesta',`Se eliminará la propuesta ${esc(p.n)}. Sus seguimientos se conservan en la ficha del contacto, sin la liga a la propuesta.`,'Eliminar propuesta',()=>{PROP.splice(PROP.indexOf(p),1);CTA.forEach(c=>c.segs.forEach(sg=>{if(sg.prop===p.id)sg.prop=null}));P2.open=null})}
+  if(t==='venta'){const v=VENTAS.find(x=>x.id===+a);if(!v)return;const p=PROP.find(x=>x.id===v.pid);
+    return confirmar('Eliminar venta',`Se eliminará la venta${p?' de '+esc(p.n):''} con su calendario de ${v.pagos.length} ${v.pagos.length===1?'pago':'pagos'}, sus seguimientos y sus comisiones. La propuesta regresará a la fase Negociación.`,'Eliminar venta',()=>{VENTAS.splice(VENTAS.indexOf(v),1);if(p){p.f='Negociación';delete p.fv}for(const k of Object.keys(COMO))if(k==='v'+v.id||k.startsWith('v'+v.id+'p'))delete COMO[k];V.open=null})}
+  if(t==='act'){const x=ACT.find(y=>y.id===+a);if(!x)return;
+    return confirmar('Eliminar actividad',`Se eliminará la actividad ${esc(x.t)}.`,'Eliminar actividad',()=>{ACT.splice(ACT.indexOf(x),1);A.open=null})}
+  if(t==='al'){let G0=null,al=null;IP.forEach(P=>P.gens.forEach(G=>G.al.forEach(z=>{if(z.id===+a){G0=G;al=z}})));if(!al)return;
+    return confirmar('Eliminar alumno',`Se eliminará a ${esc(al.n)} con su calendario de pagos.`,'Eliminar alumno',()=>{G0.al.splice(G0.al.indexOf(al),1);I.open=null})}
+  if(t==='gen'){const P=IP.find(x=>x.id===a),G=P&&P.gens.find(x=>x.id===b);if(!G)return;
+    return confirmar('Eliminar generación',`Se eliminará ${esc(G.n)} de ${esc(P.n)}${G.al.length?` con sus ${G.al.length} alumnos y sus pagos`:''}, su forecast y su comisión.`,'Eliminar generación',()=>{P.gens.splice(P.gens.indexOf(G),1);delete COMO['g'+G.id];I.gen=P.gens[0]?P.gens[0].id:null})}
+  if(t==='prog'){const P=IP.find(x=>x.id===a);if(!P)return;const na=P.gens.reduce((s2,g)=>s2+g.al.length,0);
+    return confirmar('Eliminar programa',`Se eliminará ${esc(P.n)} con ${P.gens.length} ${P.gens.length===1?'generación':'generaciones'}${na?` y ${na} alumnos`:''}.`,'Eliminar programa',()=>{P.gens.forEach(g=>delete COMO['g'+g.id]);IP.splice(IP.indexOf(P),1);I.prog=IP[0]?IP[0].id:null;I.gen=IP[0]&&IP[0].gens[0]?IP[0].gens[0].id:null})}
+}
+document.addEventListener('click',ev=>{
+  const d=ev.target.closest('[data-del]');if(d){ev.stopPropagation();const [t,a,b]=d.dataset.del.split('|');eliminar(t,a,b);return}
+  const ec=ev.target.closest('[data-edc]');if(ec){const c=CTA.find(x=>x.id===+ec.dataset.edc);keep(()=>{C.form={t:'editc',id:c.id,v:{nom:c.nom,ape:c.ape,puesto:c.puesto,emp:c.emp,correo:c.correo,tel:c.tel,origen:c.origen,fase:c.tipo==='Cliente'?6:c.fase}};C.err={}});return}
+  const ee=ev.target.closest('[data-ede]');if(ee){const e=EMP[ee.dataset.ede];keep(()=>{C.form={t:'emp',id:ee.dataset.ede,v:{empn:e.n,empc:e.c}};C.err={}});return}
+},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&CF.o){e.stopImmediatePropagation();CF.o=null;pintarCF()}},true);
 const keep=f=>{const y=scrollY;f();render();scrollTo(0,y)};
 function render(){renderLogin();pintarAvisos();if(!S.auth)return;sincronizar();nav();$('#main').innerHTML=S.view==='dash'?dashboard():S.view==='cuentas'?cuentasView():S.view==='iada'?iadaView():S.view==='propuestas'?propuestasView():S.view==='ventas'?ventasView():S.view==='actividades'?actView():S.view==='inicio'?inicioView():S.view==='ajustes'?ajustesView():S.view==='comisiones'?comView():ph();if(S.view==='comisiones')bindCom();if(S.view==='ajustes')bindAjustes();if(S.view==='actividades')bindAct();if(S.view==='inicio')bindInicio();if(S.view==='propuestas')bindProp();if(S.view==='ventas')bindVentas();if(S.view==='cuentas')bindCuentas();if(S.view==='iada')bindIada();
   document.querySelectorAll('[data-modo]').forEach(b=>b.onclick=()=>keep(()=>{S.modo=b.dataset.modo;S.edit=false;if(S.modo==='tri')S.tri=Math.floor(S.mes/3)}));
