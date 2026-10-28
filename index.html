@@ -724,7 +724,7 @@ button.me:hover{background:rgba(255,255,255,.1)}
 #svst{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;font-size:12px;font-weight:600;padding:7px 14px;border-radius:999px;z-index:90;transition:all .2s}
 #svst.guardando,#svst.ok,#svst.error{opacity:1;transform:translate(-50%,0)}#svst.error{background:#B3261E}
 @media (max-width:860px){#svst{bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
-#avb{position:fixed;top:14px;right:16px;z-index:65}
+#avb{position:absolute;top:14px;right:16px;z-index:65}
 .avbtn{all:unset;cursor:pointer;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(12px);position:relative}
 .avbtn svg{width:20px;height:20px}.avbtn em{position:absolute;top:-4px;right:-4px;background:#E5484D;color:#fff;font-style:normal;font-size:10.5px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
 .avp{position:absolute;right:0;top:50px;width:340px;max-width:calc(100vw - 32px);max-height:70vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 50px -16px rgba(6,18,42,.5);color:var(--ink)}
@@ -744,6 +744,8 @@ body:has(.dwb) #avb,body:has(.mdw) #avb{display:none}
 .elog.img{background:#fff;padding:0!important;box-shadow:none!important}.elog.img img{object-fit:cover;border-radius:inherit}
 .cb.img{padding:0!important;box-shadow:none!important}.cb.img img{object-fit:cover;border-radius:inherit}
 .lgprev{object-fit:cover}
+.anr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}.anr .btn2{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;margin-top:0}
+@media print{.noprint{display:none!important}}
 </style>
 </head>
 <body>
@@ -781,7 +783,7 @@ const CANALES={exp:{n:'Exponencial',k:'#5DB33A',i:'E'},uvm:{n:'UVM B2B',k:'#E845
 let PROSP='#3D7BFF';
 const chB=k=>{const C=CANALES[k];return C&&C.logo?`<span class="cb img"><img src="${C.logo}" alt="Logo ${C.n}"></span>`:`<span class="cb" style="background:${C?C.k:PROSP}">${C?C.i:'P'}</span>`};
 const MES_N=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const ULTIMO_H=9;let ULTIMO=Math.min(11,Math.max(9,HOY.startsWith('2026')?Number(HOY.slice(5,7))-1:11)); // último mes con cierre (octubre); desde noviembre se alimenta de la plataforma
+const ULTIMO_H=8;let ULTIMO=Math.min(11,Math.max(9,HOY.startsWith('2026')?Number(HOY.slice(5,7))-1:11)); // último mes con cierre (octubre); desde noviembre se alimenta de la plataforma
 // Metas y ventas mensuales 2026 (cierres de enero a septiembre y dashboard del 19 de octubre).
 const ANUAL={
  exp:{meta:[350000,100000,1500000,100000,0,350000,4000000,100000,2000000,0,1000000,500000],venta:[480240,0,591600,0,0,81200,0,243643.24,40600,139200,0,0]},
@@ -805,7 +807,7 @@ const MES=[
  JSON.parse(JSON.stringify(Z)),JSON.parse(JSON.stringify(Z))
 ];
 const GE_ET=[['Leads','Número de prospectos'],['Contactos exitosos','Respondieron (lead score)'],['Descartados','Leads descartados'],['Reuniones','Reuniones realizadas'],['Oportunidades','Oportunidades abiertas'],['Ventas','Ventas cerradas']];
-const PR_ET=[['Propuestas','Propuestas enviadas'],['Descartadas','Propuestas descartadas'],['Oportunidades','En negociación'],['Ventas','Propuestas ganadas']];
+const PR_ET=[['Propuestas','Propuestas enviadas'],['Descartadas','Propuestas descartadas'],['Oportunidades','Siguen abiertas'],['Ventas','Propuestas ganadas']];
 // Ediciones manuales de Prospección GE (en la plataforma se guardan en la base de datos)
 
 const S={auth:false,view:'inicio',modo:'mes',mes:ULTIMO,tri:Math.floor(ULTIMO/3),nota:false,anual:'gen',first:true,edit:false,modal:false};
@@ -927,6 +929,13 @@ function funnels(c){
      ${id==='ge'&&puedeEditar&&!S.edit?`<button class="edb" id="edb" title="Editar números" aria-label="Editar números de Prospección GE">${icon('edit')}</button>`:''}
      ${ed?'':`<span class="prev" title="Ventas cerradas en el periodo de propuestas o leads de meses anteriores">Fuera<br>del mes <b>${prev}</b></span>`}</div>${body}</article>`}).join('')}</div></section>`;
 }
+function histForma(){const H=S.hist;if(!H)return '';const MS=MES_N.slice(0,9),tot=k=>sum(H.v[k].map(x=>Number(x)||0));
+  return `<div class="mdw" id="hfw"><div class="md wide" role="dialog" aria-modal="true" aria-labelledby="hft"><h3 id="hft">Ventas de enero a septiembre</h3><p>Corrija la venta mensual con IVA de cada canal. Desde octubre, la venta se calcula con lo que registra en Ventas e IADA.</p>
+   <div class="mtw"><table class="mt2"><thead><tr><th>Mes</th>${['exp','uvm','iada'].map(k=>`<th><span class="chn"><span class="dot" style="background:${CANALES[k].k}"></span>${CANALES[k].n}</span></th>`).join('')}</tr></thead><tbody>
+   ${MS.map((n,i)=>`<tr><td class="mn2">${n}</td>${['exp','uvm','iada'].map(k=>`<td><span class="mi2">$<input type="number" min="0" step="0.01" data-hv="${k}|${i}" value="${H.v[k][i]}" aria-label="Venta ${CANALES[k].n} ${n}" class="${H.err[k+i]?'bad':''}"></span></td>`).join('')}</tr>`).join('')}
+   <tr class="gt"><td>Total</td>${['exp','uvm','iada'].map(k=>`<td id="ht-${k}">${m(tot(k))}</td>`).join('')}</tr></tbody></table></div>
+   ${Object.keys(H.err).length?'<small class="er">Revise las celdas marcadas: solo se aceptan montos de 0 en adelante.</small>':''}
+   <div class="edact"><button class="btn2" id="hno">Cancelar</button><button class="btn1" id="hok">Guardar cambios</button></div></div></div>`}
 function anual(c){
   const cur=Math.min(c.fin,ULTIMO),A=ANUAL[S.anual],nm={gen:'General',exp:'Exponencial',uvm:'UVM B2B',iada:'IADA'},kc={gen:'#3D7BFF',exp:'#5DB33A',uvm:'#E8455F',iada:'#F08A24'}[S.anual];
   const tM=sum(A.meta),tV=sum(A.venta.slice(0,cur+1));
@@ -950,7 +959,7 @@ function anual(c){
   const qs=['1er trimestre','2do trimestre','3er trimestre','4to trimestre'];
   return `<section class="sec pb"><article class="card an">
    <div class="anh"><div><h2>Comportamiento de ventas 2026</h2><p>${nm[S.anual]} · venta acumulada contra la meta del año</p></div>
-    <div class="seg">${Object.keys(nm).map(k=>`<button data-an="${k}" class="${S.anual===k?'on':''}">${nm[k]}</button>`).join('')}</div></div>
+    <div class="anr"><div class="seg">${Object.keys(nm).map(k=>`<button data-an="${k}" class="${S.anual===k?'on':''}">${nm[k]}</button>`).join('')}</div><button class="btn2 sm2 noprint" data-hed="1">${icon('edit')} Editar enero a septiembre</button></div></div>
    <div class="akp"><div class="ak"><small>Meta anual</small><b>${tM?m(tM):'Sin meta'}</b></div><div class="ak"><small>Venta acumulada</small><b>${m(tV)}</b></div>
     <div class="ak"><small>Avance anual</small><b>${tM?pct(tV,tM)+'%':'—'}</b></div><div class="ak dk"><small>Atraso a ${MES_N[cur].toLowerCase()}</small><b>${gap>0?m(gap):'Sin atraso'}</b></div></div>
    <div class="lcw"><div class="lcl"><span><i style="background:${kc}"></i>Venta acumulada</span><span><i style="background:repeating-linear-gradient(90deg,#0B1A33 0 4px,transparent 4px 8px);opacity:.5"></i>Meta acumulada</span></div>${svg}</div>
@@ -980,7 +989,7 @@ function propEnviadas(c){
   return `<section class="sec"><div class="sh"><div><h2>Propuestas enviadas del ${unidad()}</h2><p>Último seguimiento y estatus · en rojo, más de ${CFG.propDias} días sin seguimiento</p></div></div>
    <div class="pes">${bloque('uvm')}${bloque('exp')}</div></section>`;
 }
-function dashboard(){const c=ctx();return topbar()+hero(c)+general(c)+ventasCob(c)+funnels(c)+propEnviadas(c)+anual(c)+modal()}
+function dashboard(){const c=ctx();return topbar()+hero(c)+general(c)+ventasCob(c)+funnels(c)+propEnviadas(c)+anual(c)+modal()+histForma()}
 function ph(){const n=SECCIONES.find(s=>s[0]===S.view)[1];return `<div class="topbar"><div class="hello"><small>Exponencial</small><h1>${n}</h1></div></div><div class="card ph" style="margin-top:40px"><h2 style="font-size:17px;margin:0 0 6px">Sección pendiente de desglose</h2><p style="margin:0">Por ahora la maqueta solo desarrolla el Dashboard B2B.</p></div>`}
 function countUp(){const el=$('#hn');if(!el||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const to=Number(el.dataset.v),t0=performance.now(),d=1100;
   const step=t=>{const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,3);el.innerHTML=M(to*e);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
@@ -1301,7 +1310,7 @@ function iGuardar(){
     if((v.egr||[]).some(x=>!String(x.c).trim()||!(Number(x.v)>=0)||x.v===''))e.egr='Cada egreso necesita concepto y un valor.';
     I.err=e;if(Object.keys(e).length)return false;const G=IP.find(p=>p.id===I.prog).gens.find(g=>g.id===I.gen);G.fc={pI,pE,egr:v.egr.map(x=>({c:String(x.c).trim(),cat:x.cat,tipo:x.tipo,v:Number(x.v)}))};return true}
   const a=allAl().find(z=>z.a.id===F.id).a;
-  if(F.t==='pay'){req('fr','Elija la fecha de recepción.');I.err=e;if(Object.keys(e).length)return false;const i=v.i!==undefined?Number(v.i):a.pagos.findIndex(p=>!p[2]);a.pagos[i][2]=1;if(pagado(a)>=a.total)a.acuerdo=null;return true}
+  if(F.t==='pay'){req('fr','Elija la fecha de recepción.');I.err=e;if(Object.keys(e).length)return false;const i=v.i!==undefined?Number(v.i):a.pagos.findIndex(p=>!p[2]);a.pagos[i][2]=1;a.pagos[i][3]=v.fr;if(pagado(a)>=a.total)a.acuerdo=null;return true}
   if(F.t==='acu'){req('t','Describa el acuerdo.');req('f','Elija la fecha compromiso.');I.err=e;if(Object.keys(e).length)return false;a.acuerdo={t:v.t.trim(),f:v.f};return true}
 }
 function bindIada(){
@@ -1537,7 +1546,7 @@ function vForma(){
   if(F.t==='fac')return wrap('Envío de factura',esc(propV(v).n)+' · pago '+(F.i+1)+'. Al registrarla se habilita su comisión y recibirá la notificación.',fl('fac','Número de factura',`<input data-v="fac" value="${val('fac')}">`,1)+fl('facF','Fecha de envío',`<input type="date" data-v="facF" value="${val('facF')}">`,1),'Registrar factura','');
   if(F.t==='ok')return wrap('Confirmación de Finanzas',esc(propV(v).n)+' · pago '+(F.i+1)+' · '+m(v.pagos[F.i].m),fl('f','Fecha en que Finanzas confirmó',`<input type="date" data-v="f" value="${val('f')}">`,1,'full'),'Marcar como pagado','');
   if(F.t==='seg')return wrap('Seguimiento de la venta',esc(propV(v).n),fl('f','Fecha',`<input type="date" data-v="f" value="${val('f')}">`,1)+fl('nota','Nota',`<textarea data-v="nota" rows="3">${val('nota')}</textarea>`,1,'full'),'Guardar','');
-  if(F.t==='fv')return wrap('Fecha de la venta','Es la fecha en que el programa inicia operación; define el mes en que la venta cuenta en el Dashboard.',fl('fv','Fecha de venta',`<input type="date" data-v="fv" value="${val('fv')}">`,1)+fl('motivo','Motivo del cambio',`<input data-v="motivo" value="${val('motivo')}" placeholder="Ejemplo: el programa arrancó en otra fecha">`,0)+`<p class="hint" style="margin:0;grid-column:1/-1">De enero a octubre de 2026 el Dashboard usa los cierres mensuales, por lo que una venta fechada en esos meses no modifica sus cifras.</p>`,'Guardar fecha','');
+  if(F.t==='fv')return wrap('Fecha de la venta','Es la fecha en que el programa inicia operación; define el mes en que la venta cuenta en el Dashboard.',fl('fv','Fecha de venta',`<input type="date" data-v="fv" value="${val('fv')}">`,1)+fl('motivo','Motivo del cambio',`<input data-v="motivo" value="${val('motivo')}" placeholder="Ejemplo: el programa arrancó en otra fecha">`,0)+`<p class="hint" style="margin:0;grid-column:1/-1">De enero a septiembre de 2026 el Dashboard usa los cierres mensuales, por lo que una venta fechada en esos meses no modifica sus cifras; desde octubre se calcula con lo que registra.</p>`,'Guardar fecha','');
   if(F.t==='uvm')return wrap('Nombre del programa en UVM','Así aparecerá en el reporte para Finanzas.',fl('uvmN','Nombre que asigna UVM',`<input data-v="uvmN" value="${val('uvmN')}">`,0,'full'),'Guardar','');
   if(F.t==='lunes'){const L=porConf();return wrap('Confirmación de Finanzas','Pagos incluidos en el reporte del viernes. Marque los que Finanzas confirmó como recibidos; los no recibidos pasan al siguiente reporte.',
     fl('f','Fecha de confirmación',`<input type="date" data-v="f" value="${val('f')}">`,1)+`<div class="cal">${L.length?L.map(({v,p,i})=>{const key=v.id+'|'+i,c=ctaV(v);return `<div class="lun"><div><b>${esc(propV(v).n)} · pago ${i+1}</b><small>${esc(EMP[c.emp].n)} · ${ORIG[c.origen].n} · ${m(p.m)} · ${fmtF(p.f)}</small></div><div class="seg"><button data-lun="${key}|1" class="${F.v.r[key]===1?'on':''}">Recibido</button><button data-lun="${key}|0" class="${F.v.r[key]===0?'on':''}">No recibido</button></div></div>`}).join(''):'<p class="mut">No hay pagos pendientes de confirmación.</p>'}</div>`,L.length?'Guardar confirmación':'')}
@@ -1865,7 +1874,7 @@ function ajDatos(){return `<article class="card"><h3 class="ajh">Datos y respald
    <div class="edact" style="justify-content:flex-start"><label class="btn2 dang" style="cursor:pointer">Elegir archivo para restaurar<input type="file" accept=".json,application/json" id="ajrest" hidden></label></div>
    ${AJ.rest?`<div class="mdw" id="rsw"><div class="md" role="dialog" aria-modal="true" aria-labelledby="rst"><h3 id="rst">Restaurar respaldo</h3><p>Archivo del ${esc(AJ.rest.fecha)}. Contiene ${AJ.rest.n.cuentas} cuentas, ${AJ.rest.n.propuestas} propuestas, ${AJ.rest.n.ventas} ventas, ${AJ.rest.n.alumnos} alumnos IADA y ${AJ.rest.n.actividades} actividades.</p><p style="color:var(--bad);font-weight:600">Esta acción reemplaza toda la información actual. Antes se descargará un respaldo del estado actual.</p><div class="edact"><button class="btn2" data-rsno="1">Cancelar</button><button class="btn1 dang" data-rsok="1">Restaurar</button></div></div></div>`:''}
    <h4 class="sh4" style="margin-top:18px">Cuenta</h4><div class="rlz"><div><b>Usuario</b><small>Fernanda · Chief of Staff · ${esc(CFG.correo)}</small></div><div><b>Acceso</b><small>Plataforma privada con inicio de sesión; solo su usuario puede ver y editar la información.</small></div></div><div class="edact" style="justify-content:flex-start"><button class="btn2 dang" data-logout="1">Cerrar sesión</button></div>
-   <h4 class="sh4" style="margin-top:18px">Datos históricos</h4><div class="rlz"><div><b>Enero a octubre de 2026</b><small>Tomados de los cierres mensuales y del dashboard del 19 de octubre; son fijos.</small></div><div><b>Desde noviembre</b><small>El Dashboard se calcula automáticamente con lo que registre en la plataforma.</small></div></div></article>`}
+   <h4 class="sh4" style="margin-top:18px">Datos históricos</h4><div class="rlz"><div><b>Enero a septiembre de 2026</b><small>Tomados de los cierres mensuales. Puede corregirlos en Dashboard › Comportamiento de ventas.</small></div><div><b>Desde octubre</b><small>El Dashboard se calcula automáticamente con lo que registre en la plataforma.</small></div></div></article>`}
 function bkData(){return {generado:new Date().toISOString(),version:2,...Object.fromEntries(Object.keys(COL).map(k=>[k,COL[k]()]))}}
 function bkJSON(nombre){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(bkData(),null,2)],{type:'application/json'}));a.download=nombre||`Respaldo_Exponencial_${HOY}.json`;a.click()}
 function bkXLS(){const hojas={
@@ -2042,17 +2051,21 @@ async function logout(){await dbGuardar();await SB.auth.signOut();location.reloa
 
 /* ===== Meses calculados con la información de la plataforma (desde noviembre de 2026) ===== */
 const PROSPM={};
+const HISTV={exp:ANUAL.exp.venta.slice(0,9),uvm:ANUAL.uvm.venta.slice(0,9),iada:ANUAL.iada.venta.slice(0,9)};
 function sincronizar(){
   ULTIMO=Math.min(11,Math.max(ULTIMO_H,HOY.startsWith('2026')?Number(HOY.slice(5,7))-1:11));
+  ['exp','uvm','iada'].forEach(k=>{for(let i=0;i<=ULTIMO_H;i++)ANUAL[k].venta[i]=Number(HISTV[k][i])||0});
   const mesDe=d=>d&&d.startsWith('2026-')?Number(d.slice(5,7))-1:-1,finMes=i=>'2026-'+String(i+1).padStart(2,'0')+'-31';
+  // Por cobrar al cierre de cada mes: pagos con fecha hasta ese mes que no se habían cobrado al terminarlo (lo vencido se arrastra)
+  const sinCobrar=(f,conf,i)=>f<=finMes(i)&&(!conf||conf>finMes(i));
   for(let i=ULTIMO_H+1;i<12;i++){
     const M2={progs:{exp:0,uvm:0,iada:0},cob:{exp:[0,0],uvm:[0,0],iada:[0,0]},ge:PROSPM[i]||[0,0,0,0,0,0,0],uvm:[0,0,0,0,0],gep:[0,0,0,0,0]},ven={exp:0,uvm:0,iada:0};
     VENTAS.forEach(v=>{const p=propV(v);if(!p||!ctaOf(p))return;const o=ctaOf(p).origen;if(mesDe(v.fv)===i){ven[o]+=Number(p.m)||0;M2.progs[o]++}
-      v.pagos.forEach(pg=>{if(pg.conf&&mesDe(pg.conf)===i)M2.cob[o][0]+=pg.m;if(!pg.conf&&pg.f<=finMes(i))M2.cob[o][1]+=pg.m})});
+      v.pagos.forEach(pg=>{if(pg.conf&&mesDe(pg.conf)===i)M2.cob[o][0]+=pg.m;if(sinCobrar(pg.f,pg.conf,i))M2.cob[o][1]+=pg.m})});
     IP.forEach(P=>P.gens.forEach(G=>G.al.forEach(a=>{const fi=a.ins||(a.pagos[0]&&a.pagos[0][1]);if(mesDe(fi)===i){ven.iada+=Number(a.total)||0;M2.progs.iada++}
-      a.pagos.forEach(pg=>{if(pg[2]&&mesDe(pg[1])===i)M2.cob.iada[0]+=pg[0];if(!pg[2]&&pg[1]<=finMes(i))M2.cob.iada[1]+=pg[0]})})));
+      a.pagos.forEach(pg=>{const fc=pg[2]?(pg[3]||pg[1]):null;if(fc&&mesDe(fc)===i)M2.cob.iada[0]+=pg[0];if(sinCobrar(pg[1],fc,i))M2.cob.iada[1]+=pg[0]})})));
     PROP.forEach(p=>{const c=ctaOf(p);if(!c)return;const id=c.origen==='uvm'?'uvm':'gep';
-      if(mesDe(p.fecha)===i){M2[id][0]++;if(p.f==='Descartada')M2[id][1]++;if(p.f==='Negociación')M2[id][2]++;if(p.f==='Venta')M2[id][3]++}
+      if(mesDe(p.fecha)===i){M2[id][0]++;if(p.f==='Descartada')M2[id][1]++;else if(p.f==='Venta')M2[id][3]++;else M2[id][2]++}
       else if(p.f==='Venta'&&mesDe(p.fv)===i)M2[id][4]++});
     MES[i]=M2;['exp','uvm','iada'].forEach(k=>ANUAL[k].venta[i]=r2(ven[k]));
   }
@@ -2063,7 +2076,7 @@ function sincronizar(){
 /* ================= GUARDADO EN SUPABASE ================= */
 const DB={uid:null,email:'',hash:{},t:null,enCurso:false,otra:false,envios:'',estado:'ok'};
 const COL={cuentas:()=>CTA,empresas:()=>EMP,propuestas:()=>PROP,ventas:()=>VENTAS,iada:()=>IP,actividades:()=>ACT,comisiones:()=>COMO,
-  metas:()=>({exp:ANUAL.exp.meta,uvm:ANUAL.uvm.meta,iada:ANUAL.iada.meta}),prosp:()=>PROSPM,ajustes:()=>CFG,
+  metas:()=>({exp:ANUAL.exp.meta,uvm:ANUAL.uvm.meta,iada:ANUAL.iada.meta}),historico:()=>HISTV,prosp:()=>PROSPM,ajustes:()=>CFG,
   catalogos:()=>({MOTIVOS,MEDIOS,TIPOS,MODS,ADIC,AREAS,FPAGO,CATS}),
   canales:()=>({prosp:PROSP,ch:Object.fromEntries(Object.entries(CANALES).map(([k,c])=>[k,{k:c.k,logo:c.logo||null,lt:c.lt||0}]))})};
 const llenarA=(arr,src)=>{arr.splice(0,arr.length,...(Array.isArray(src)?src:[]))};
@@ -2073,6 +2086,7 @@ function aplicar(k,d){if(d==null)return;switch(k){
   case 'iada':llenarA(IP,d);break;case 'actividades':llenarA(ACT,d);break;case 'comisiones':llenarO(COMO,d);break;
   case 'metas':['exp','uvm','iada'].forEach(c=>{if(Array.isArray(d[c])&&d[c].length===12)ANUAL[c].meta=d[c].map(Number)});break;
   case 'prosp':llenarO(PROSPM,d);for(const i in PROSPM)if(+i<=ULTIMO_H&&MES[i])MES[i].ge=PROSPM[i];break;
+  case 'historico':['exp','uvm','iada'].forEach(c=>{if(Array.isArray(d[c])&&d[c].length===9)HISTV[c]=d[c].map(Number)});break;
   case 'ajustes':Object.assign(CFG,d);break;
   case 'catalogos':for(const [n,arr] of [['MOTIVOS',MOTIVOS],['MEDIOS',MEDIOS],['TIPOS',TIPOS],['MODS',MODS],['ADIC',ADIC],['AREAS',AREAS],['FPAGO',FPAGO],['CATS',CATS]])if(Array.isArray(d[n])&&d[n].length)llenarA(arr,d[n]);break;
   case 'canales':if(d.prosp)PROSP=d.prosp;for(const [c,v] of Object.entries(d.ch||{}))if(CANALES[c]){CANALES[c].k=v.k;CANALES[c].logo=v.logo||null;CANALES[c].lt=v.lt||0;if(ORIG[c])ORIG[c].k=v.k}break}}
@@ -2176,6 +2190,15 @@ function leerLogo(f,cb){if(!f)return;const r=new FileReader();r.onload=()=>proce
 function ajustarLogosGuardados(){let n=0;const fin=()=>{if(--n===0)keep(()=>{})};
   for(const e of Object.values(EMP))if(e.logo&&!e.lt){n++;procesarLogo(e.logo,u=>{e.logo=u;e.lt=1;fin()})}
   for(const c of Object.values(CANALES))if(c.logo&&!c.lt){n++;procesarLogo(c.logo,u=>{c.logo=u;c.lt=1;fin()})}}
+
+document.addEventListener('click',ev=>{
+  if(ev.target.closest('[data-hed]')){keep(()=>{S.hist={v:{exp:HISTV.exp.slice(),uvm:HISTV.uvm.slice(),iada:HISTV.iada.slice()},err:{}}});return}
+  if(ev.target.closest('#hno')){keep(()=>S.hist=null);return}
+  if(ev.target.closest('#hok')){const H=S.hist,e={};['exp','uvm','iada'].forEach(k=>H.v[k].forEach((x,i)=>{if(x===''||!(Number(x)>=0))e[k+i]=1}));H.err=e;
+    keep(()=>{if(!Object.keys(e).length){['exp','uvm','iada'].forEach(k=>HISTV[k]=H.v[k].map(x=>r2(Number(x))));S.hist=null;toast('<b>Ventas actualizadas</b>El Dashboard ya refleja los cambios de enero a septiembre.')}});return}
+});
+document.addEventListener('input',ev=>{const el=ev.target.closest('[data-hv]');if(!el||!S.hist)return;const [k,i]=el.dataset.hv.split('|');S.hist.v[k][+i]=el.value;const c=$('#ht-'+k);if(c)c.textContent=m(sum(S.hist.v[k].map(x=>Number(x)||0)))});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.hist){e.stopImmediatePropagation();keep(()=>S.hist=null)}},true);
 const keep=f=>{const y=scrollY;f();render();scrollTo(0,y)};
 function render(){renderLogin();pintarAvisos();if(!S.auth)return;sincronizar();nav();$('#main').innerHTML=S.view==='dash'?dashboard():S.view==='cuentas'?cuentasView():S.view==='iada'?iadaView():S.view==='propuestas'?propuestasView():S.view==='ventas'?ventasView():S.view==='actividades'?actView():S.view==='inicio'?inicioView():S.view==='ajustes'?ajustesView():S.view==='comisiones'?comView():ph();if(S.view==='comisiones')bindCom();if(S.view==='ajustes')bindAjustes();if(S.view==='actividades')bindAct();if(S.view==='inicio')bindInicio();if(S.view==='propuestas')bindProp();if(S.view==='ventas')bindVentas();if(S.view==='cuentas')bindCuentas();if(S.view==='iada')bindIada();
   document.querySelectorAll('[data-modo]').forEach(b=>b.onclick=()=>keep(()=>{S.modo=b.dataset.modo;S.edit=false;if(S.modo==='tri')S.tri=Math.floor(S.mes/3)}));
