@@ -910,7 +910,7 @@ const unidad=()=>S.modo==='mes'?'mes':'trimestre';
 
 function nav(){
   $('#nav').innerHTML=SECCIONES.map(([k,n])=>`<button data-v="${k}" title="${n}" aria-label="${n}" class="${S.view===k?'on':''}">${icon(k)}<span>${n}</span></button>`).join('');
-  const MAIN=['inicio','actividades','dash','cuentas'],rest=SECCIONES.filter(([k])=>!MAIN.includes(k));
+  const MAIN=['inicio','actividades','cos','dash'],rest=SECCIONES.filter(([k])=>!MAIN.includes(k));
   $('#mtabs').innerHTML=SECCIONES.filter(([k])=>MAIN.includes(k)).map(([k,n])=>`<button data-v="${k}" class="${S.view===k?'on':''}">${icon(k)}<span>${n}</span></button>`).join('')
    +`<button id="mmas" class="${!MAIN.includes(S.view)?'on':''}" aria-expanded="${S.mas?'true':'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>${!MAIN.includes(S.view)?SECCIONES.find(x=>x[0]===S.view)[1]:'Más'}</span></button>`
    +(S.mas?`<div class="msheet" role="menu">${rest.map(([k,n])=>`<button data-v="${k}" class="${S.view===k?'on':''}" role="menuitem">${icon(k)}<span>${n}</span></button>`).join('')}<div class="msh"><span class="av">F</span><span><b>Fernanda</b><small>Chief of Staff</small></span></div><button class="out" data-logout="1" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span>Cerrar sesión</span></button></div>`:'');
