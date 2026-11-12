@@ -1,7 +1,8 @@
 // Exponencial · Plataforma B2B — instalación como app, apertura rápida y notificaciones push.
-const CACHE = "exp-b2b-v8";
-const BASE = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
-self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).then(() => self.skipWaiting())); });
+const CACHE = "exp-b2b-v9";
+const BASE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+// Si algún archivo no existe, la instalación continúa (antes podía detenerla).
+self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(BASE.map((u) => c.add(u)))).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {
   const u = new URL(e.request.url);
@@ -10,7 +11,7 @@ self.addEventListener("fetch", (e) => {
 });
 self.addEventListener("push", (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : "" }; }
-  e.waitUntil(self.registration.showNotification(d.title || "Exponencial", { body: d.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: d.tag || "exp", data: { url: d.url || "./" } }));
+  e.waitUntil(self.registration.showNotification(d.title || "Exponencial", { body: d.body || "", icon: "icon-192.png", badge: "icon-192.png", tag: d.tag || "exp", data: { url: d.url || "./" } }));
 });
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
