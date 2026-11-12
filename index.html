@@ -825,6 +825,11 @@ details.cs-en{background:#fff;border-radius:14px;margin-bottom:8px;box-shadow:in
 @media (min-width:861px){.ckp.ckp6{grid-template-columns:repeat(3,1fr)}}
 @media (min-width:861px){.g3:not(.g3f){grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 
+.cs-hcap b{color:#fff;font-size:15px}.cs-hsub{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.cs-hsub .cs-pact{margin-top:0;flex:1;min-width:200px}
+.cs-pact.ef2{background:rgba(255,255,255,.05)}.cs-pact.ef2 b{font-size:32px;color:#A9C4FF}
+.cs-efp{font-size:10.5px;font-weight:700;background:rgba(255,255,255,.18);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.cs-cub{height:12px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:8px}.cs-cub span{display:block;height:100%;background:#7CF0B4;border-radius:99px}
+.cs-efl.sm{font-size:12px;color:#DCE6F6;margin-top:6px}.cs-efl.sm b{font-size:13px;color:#A9C4FF}
 </style>
 </head>
 <body>
@@ -2309,7 +2314,7 @@ const csAreaDe=k=>csArea(csEnc(k).area)||{id:'',n:'Sin área',c:'#4B5B76',i:'mal
 const csUltAj=k=>{const a=k.h.filter(x=>x.k==='ent'&&x.res==='ajuste');return a.length?a[a.length-1]:null};
 const csVenc=k=>k.est==='Pendiente'&&k.fc<HOY;
 const csTiempo=k=>!!k.fe&&k.fe<=k.fc;
-function csStats(L){const ent=L.filter(k=>k.est==='Entregado'),t=ent.filter(csTiempo).length,ft=ent.length-t,pend=L.filter(k=>k.est!=='Entregado').length,venc=L.filter(csVenc).length,base=t+ft+venc;return {tot:L.length,pend,venc,t,ft,ef:base?Math.round(t/base*100):null}}
+function csStats(L){const ent=L.filter(k=>k.est==='Entregado'),t=ent.filter(csTiempo).length,ft=ent.length-t,pend=L.filter(k=>k.est!=='Entregado').length,venc=L.filter(csVenc).length,base=t+ft+venc;return {tot:L.length,ent:ent.length,pend,venc,t,ft,ef:base?Math.round(t/base*100):null,cu:L.length?Math.round(ent.length/L.length*100):null}}
 const csCol=ef=>ef==null?'#8593AB':ef>=80?'#1F9D68':ef>=60?'#B7791F':'#E5484D';
 const csGrad=c=>`background-image:linear-gradient(135deg,${c},color-mix(in srgb,${c} 38%,#06122A))`;
 const csIni=n=>String(n||'?').split(' ').filter(Boolean).map(x=>x[0]).slice(0,2).join('').toUpperCase();
@@ -2322,15 +2327,16 @@ const csMesSel=(id,v)=>`<select class="cs-sel" data-csm="${id}" aria-label="Mes"
 const csDelMes=(k,mes)=>csEnc(k).f.slice(0,7)===mes;
 const csPc=(n,t)=>t?Math.round(n/t*100):0;
 function csHero(st,mes){const ef=st.ef,cols=[['Pendientes en plazo','#F2B33D',st.pend-st.venc],['Vencidos','#E5484D',st.venc],['En tiempo','#3BBF86',st.t],['Fuera de tiempo',FT_C,st.ft]];
-  return `<div class="cs-hero"><div class="cs-hl"><div class="cs-hk"><span class="cs-dot"></span>Efectividad de acuerdos · ${MES_N[+mes.slice(5)-1].toLowerCase()}</div>
-    <div class="cs-hrow"><div class="cs-hn">${ef==null?'—':ef}<span>${ef==null?'':'%'}</span></div><div class="cs-hcap">Acuerdos en tiempo<br>÷ debían entregarse</div></div>
-    <div class="cs-pact"><b>${st.tot}</b><span>${st.tot===1?'acuerdo pactado':'acuerdos pactados'}<br>en el mes</span></div></div>
+  return `<div class="cs-hero"><div class="cs-hl"><div class="cs-hk"><span class="cs-dot"></span>Cumplimiento de acuerdos · ${MES_N[+mes.slice(5)-1].toLowerCase()}</div>
+    <div class="cs-hrow"><div class="cs-hn">${st.cu==null?'—':st.cu}<span>${st.cu==null?'':'%'}</span></div><div class="cs-hcap"><b>Cumplimiento</b><br>Acuerdos entregados<br>÷ pactados</div></div>
+    <div class="cs-hsub"><div class="cs-pact"><b>${st.tot}</b><span>${st.tot===1?'acuerdo pactado':'acuerdos pactados'}<br>${st.ent} ${st.ent===1?'entregado':'entregados'}</span></div>
+     <div class="cs-pact ef2"><b>${ef==null?'—':ef+'%'}</b><span>Efectividad<br>en tiempo ÷ debían entregarse</span></div></div></div>
    <div class="cs-chart">${cols.map(([n,c,v])=>`<div class="cs-col"><em>${csPc(v,st.tot)}%</em><span class="cs-track"><i style="height:${csPc(v,st.tot)}%;background:${c}"></i></span><b>${v}</b><small>${n}</small></div>`).join('')}</div></div>`}
 function csMini(a){const L=CSK.filter(k=>csEnc(k).area===a.id&&csDelMes(k,CSV.mes)),s=csStats(L),r=csResp(a),R=26,C=2*Math.PI*R;
   const cols=[['Pendientes','#F2B33D',s.pend],['En tiempo','#3BBF86',s.t],['Fuera de tiempo',FT_C,s.ft]];
   return `<button class="cs-card" data-cs="area|${a.id}" style="${csGrad(a.c)}" aria-label="Abrir ${esc(a.n)}"><span class="cs-shade"></span>
    <span class="cs-ch"><span><b class="cs-an"><span class="cs-ico">${aic(a.i,20)}</span>${esc(a.n)}</b>${r?`<span class="cs-rp"><span class="cs-av sm" style="background:${r.c}">${csIni(r.n)}</span>${esc(r.n)}</span>`:'<span class="cs-rp">Sin responsable</span>'}</span>
-    <span class="cs-rr"><span class="cs-ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="${R}" stroke="rgba(255,255,255,.22)" stroke-width="6" fill="none"/><circle cx="32" cy="32" r="${R}" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${C*(s.ef||0)/100} ${C}" transform="rotate(-90 32 32)"/></svg><b>${s.ef==null?'—':s.ef+'%'}</b></span>${s.venc?`<span class="cs-vc">${s.venc} vencido${s.venc>1?'s':''}</span>`:''}</span></span>
+    <span class="cs-rr"><span class="cs-ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="${R}" stroke="rgba(255,255,255,.22)" stroke-width="6" fill="none"/><circle cx="32" cy="32" r="${R}" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${C*(s.cu||0)/100} ${C}" transform="rotate(-90 32 32)"/></svg><b>${s.cu==null?'—':s.cu+'%'}</b></span><span class="cs-efp">Efectividad ${s.ef==null?'—':s.ef+'%'}</span>${s.venc?`<span class="cs-vc">${s.venc} vencido${s.venc>1?'s':''}</span>`:''}</span></span>
    <span class="cs-mb"><span class="cs-gen"><small>Acuerdos generados</small><b>${s.tot}</b></span><span class="cs-mc">${cols.map(([n,c,v])=>`<span class="cs-mcol"><em>${csPc(v,s.tot)}%</em><span class="cs-mt"><i style="height:${csPc(v,s.tot)}%;background:${c}"></i></span><b>${v}</b><small>${n}</small></span>`).join('')}</span></span></button>`}
 function csAcuRow(k,tipo){const e=csEnc(k),v=csVenc(k),aj=csUltAj(k);
   return `<div class="cs-ak ${v?'venc':''}">${tipo==='p'?`<button class="cs-ck" data-cs="ent|${k.id}" aria-label="Registrar entrega de ${esc(k.t)}"></button>`:`<span class="cs-done" style="background:${tipo==='t'?'#1F9D68':FT_C}">✓</span>`}
@@ -2352,7 +2358,7 @@ function csAreaView(){
       <div class="cs-resp">${r?`<span class="cs-av lg" style="background:${r.c}">${csIni(r.n)}</span><span><small>Responsable del área</small><b>${esc(r.n)}</b><em>${esc(r.p)}</em></span>`:'<span><small>Responsable del área</small><b>Sin asignar</b><em>Asígnelo en Ajustes › Áreas y equipo</em></span>'}</div></div>
      <div class="cs-br"><div><h5>Encuentros de ${MES_N[+mes.slice(5)-1].toLowerCase()}</h5><div class="cs-g2"><div class="cs-t"><small>Dirección General</small><b>${enc.filter(e=>e.enc===CS_DG).length}</b></div><div class="cs-t"><small>Chief of Staff</small><b>${enc.filter(e=>e.enc===CS_CS).length}</b></div></div></div>
       <div><h5>Acuerdos de ${MES_N[+mes.slice(5)-1].toLowerCase()}</h5><div class="cs-g4"><div class="cs-t"><small>Generados</small><b>${s.tot}</b></div><div class="cs-t"><small>Pendientes</small><b class="y">${s.pend}</b></div><div class="cs-t"><small>En tiempo</small><b class="g">${s.t}</b></div><div class="cs-t"><small>Fuera de tiempo</small><b class="bl">${s.ft}</b></div></div></div>
-      <div class="cs-efg"><div class="cs-efl"><h5>Efectividad del área</h5><b>${s.ef==null?'—':s.ef+'%'}</b></div><div class="cs-bar"><span style="width:${csPc(s.t,s.tot)}%;background:#3BBF86"></span><span style="width:${csPc(s.ft,s.tot)}%;background:${FT_C}"></span><span style="width:${csPc(s.pend-s.venc,s.tot)}%;background:#F2B33D"></span><span style="width:${csPc(s.venc,s.tot)}%;background:#E5484D"></span></div>${s.venc?`<em class="cs-vcl">${s.venc} acuerdo${s.venc>1?'s':''} vencido${s.venc>1?'s':''}</em>`:''}</div></div></div></div>
+      <div class="cs-efg"><div class="cs-efl"><h5>Cumplimiento del área</h5><b>${s.cu==null?'—':s.cu+'%'}</b></div><div class="cs-cub"><span style="width:${s.cu||0}%"></span></div><div class="cs-efl sm"><span>${s.ent} de ${s.tot} ${s.tot===1?'acuerdo entregado':'acuerdos entregados'}</span><span>Efectividad <b>${s.ef==null?'—':s.ef+'%'}</b></span></div><h5 style="margin-top:10px">Desglose</h5><div class="cs-bar"><span style="width:${csPc(s.t,s.tot)}%;background:#3BBF86"></span><span style="width:${csPc(s.ft,s.tot)}%;background:${FT_C}"></span><span style="width:${csPc(s.pend-s.venc,s.tot)}%;background:#F2B33D"></span><span style="width:${csPc(s.venc,s.tot)}%;background:#E5484D"></span></div>${s.venc?`<em class="cs-vcl">${s.venc} acuerdo${s.venc>1?'s':''} vencido${s.venc>1?'s':''}</em>`:''}</div></div></div></div>
    <div class="cs-lay"><aside class="card cs-team"><h4>Equipo del área <span class="mut">· ${a.team.length}</span></h4>${a.team.map(p=>`<div class="cs-p"><span class="cs-av" style="background:${p.c}">${csIni(p.n)}</span><span><b>${esc(p.n)}</b><small>${esc(p.p)}</small></span>${p.r?'<span class="cs-rb">Responsable</span>':''}</div>`).join('')||'<p class="mut">Sin integrantes.</p>'}<p class="mut" style="font-size:11.5px;margin:10px 0 0">El equipo se administra en Ajustes › Áreas y equipo.</p></aside>
     <div class="cs-rc"><div class="card"><div class="cs-lsh"><div><h3 style="font-size:15px">Encuentros registrados · ${enc.length}</h3><p class="mut" style="margin:2px 0 0;font-size:12px">Abra uno para ver qué se habló</p></div></div>
       ${enc.map(e=>{const ac=CSK.filter(k=>k.e===e.id);return `<details class="cs-en"><summary><span class="cs-ti">${e.t==='Llamada'?aic('chat',18):e.t==='WhatsApp'?aic('chat',18):aic('personas',18)}</span><span><b>${esc(e.n)}</b><small>${e.t} · ${fmtF(e.f)} · ${e.enc} · ${ac.length} ${ac.length===1?'acuerdo':'acuerdos'}</small></span><span class="cs-chev" aria-hidden="true">▾</span></summary>
@@ -2486,8 +2492,8 @@ function csInicioCard(){const mes=HOY.slice(0,7),st=csStats(CSK.filter(k=>csDelM
   const venAr=CSA.map(a=>({a,n:CSK.filter(k=>csEnc(k).area===a.id&&csVenc(k)).length})).filter(x=>x.n);
   const prox=CSK.filter(k=>k.est!=='Entregado'&&k.fc>HOY&&k.fc<=addD(HOY,7)).sort((x,y)=>x.fc.localeCompare(y.fc));
   return `<article class="card cs-ic2"><h4 class="sh4">Chief of Staff · ${MES_N[+mes.slice(5)-1].toLowerCase()}</h4>
-   <div class="cs-ir"><span class="cs-ring dk"><svg width="76" height="76" viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" stroke="#E3E8F0" stroke-width="7" fill="none"/><circle cx="38" cy="38" r="${R}" stroke="${csCol(st.ef)}" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="${C*(st.ef||0)/100} ${C}" transform="rotate(-90 38 38)"/></svg><b>${st.ef==null?'—':st.ef+'%'}</b></span>
-    <div><small>Efectividad del mes</small><b>${st.tot} ${st.tot===1?'acuerdo pactado':'acuerdos pactados'}</b><em>${st.venc} vencidos · ${st.pend-st.venc} en plazo</em></div></div>
+   <div class="cs-ir"><span class="cs-ring dk"><svg width="76" height="76" viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" stroke="#E3E8F0" stroke-width="7" fill="none"/><circle cx="38" cy="38" r="${R}" stroke="${csCol(st.cu)}" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="${C*(st.cu||0)/100} ${C}" transform="rotate(-90 38 38)"/></svg><b>${st.cu==null?'—':st.cu+'%'}</b></span>
+    <div><small>Cumplimiento del mes</small><b>${st.ent} de ${st.tot} ${st.tot===1?'acuerdo entregado':'acuerdos entregados'}</b><em>Efectividad ${st.ef==null?'—':st.ef+'%'} · ${st.venc} vencidos</em></div></div>
    <h5 class="cs-h5">Áreas con acuerdos vencidos</h5>${venAr.map(x=>`<button class="cs-arow" data-cs="area|${x.a.id}" style="--k:${x.a.c}"><span class="cs-aic">${aic(x.a.i,15)}</span><b>${esc(x.a.n)}</b><em>${x.n} vencido${x.n>1?'s':''}</em></button>`).join('')||'<p class="mut">Ninguna.</p>'}
    <h5 class="cs-h5">Entregas de los próximos 7 días</h5>${prox.map(k=>`<button class="cs-arow" data-cs="acu|${k.id}" style="--k:${csAreaDe(k).c}"><span class="cs-d3"></span><span class="tx"><b>${esc(k.t)}</b><small>${esc(k.r)} · ${esc(csAreaDe(k).n)}</small></span><em class="n">${fmtF(k.fc)}</em></button>`).join('')||'<p class="mut">Sin entregas próximas.</p>'}
    <button class="btn2" data-v="cos" style="width:100%;justify-content:center;margin-top:10px">Ir a Chief of Staff</button></article>`}
